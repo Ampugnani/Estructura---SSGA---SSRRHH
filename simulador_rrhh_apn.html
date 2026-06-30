@@ -1,0 +1,2304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador RRHH · APN 2025</title>
+<style>
+:root{
+  --azul:#0C2340;--azul-m:#183D6B;--azul-c:#2B6CB0;--azul-s:#EBF4FF;
+  --teal:#1D9E75;--teal-s:#E1F5EE;
+  --ambar:#C07A00;--ambar-s:#FEF3CD;
+  --rojo:#B91C1C;--rojo-s:#FEE2E2;
+  --gris0:#F8F9FB;--gris1:#EEF0F5;--gris2:#D4D8E2;--gris3:#8892A8;--gris8:#1E2535;
+  --borde:1px solid var(--gris2);
+  --r:8px;--r2:12px;
+  --sombra:0 1px 4px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gris0);color:var(--gris8);font-size:13.5px;line-height:1.55}
+
+/* NAV */
+.nav{background:var(--azul);display:flex;align-items:stretch;padding:0 20px;border-bottom:3px solid var(--teal);position:sticky;top:0;z-index:100}
+.nav-logo{display:flex;align-items:center;gap:10px;padding:12px 0;margin-right:24px;white-space:nowrap}
+.nav-logo-mark{width:32px;height:32px;background:var(--teal);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:white;flex-shrink:0}
+.nav-logo-text{font-size:12px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:.04em;text-transform:uppercase;line-height:1.3}
+.nav-logo-text span{color:var(--teal);display:block}
+.nav-tabs{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tabs::-webkit-scrollbar,.org-scroll::-webkit-scrollbar,body::-webkit-scrollbar{display:none}
+.ntab{padding:14px 18px;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-3px;color:rgba(255,255,255,.55);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:.03em;transition:all .18s}
+.ntab:hover{color:white;background:rgba(255,255,255,.06)}
+.ntab.on{color:white;border-bottom-color:var(--teal)}
+
+/* PANELS */
+.panel{display:none;padding:22px 20px;max-width:1280px;margin:0 auto}
+.panel.on{display:block}
+
+/* CARD */
+.card{background:white;border-radius:var(--r2);border:var(--borde);padding:18px 22px;box-shadow:var(--sombra);margin-bottom:18px}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.card-head h2{font-size:15px;font-weight:700;color:var(--azul)}
+.card-sub{font-size:11.5px;color:var(--gris3);margin-top:2px}
+.section-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gris3);margin-bottom:10px;margin-top:4px}
+
+/* ALERT BOXES */
+.info-bar,.warn-bar,.ok-bar{border-radius:0 var(--r) var(--r) 0;padding:10px 14px;font-size:12.5px;line-height:1.6;margin-bottom:14px}
+.info-bar{background:var(--azul-s);border-left:4px solid var(--azul-c);color:#1a3a6b}
+.warn-bar{background:var(--ambar-s);border-left:4px solid var(--ambar);color:#7a4a00}
+.ok-bar{background:var(--teal-s);border-left:4px solid var(--teal);color:#0a4a35}
+
+/* METRICS ROW */
+.metrics{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.met{background:white;border:var(--borde);border-radius:var(--r);padding:14px 18px;min-width:130px;flex:1;box-shadow:var(--sombra);text-align:center}
+.met-num{font-size:28px;font-weight:900;line-height:1;color:var(--azul)}
+.met-num.t{color:var(--teal)}.met-num.a{color:var(--ambar)}.met-num.r{color:var(--rojo)}
+.met-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--gris3);margin-top:5px}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead tr{background:var(--azul)}
+thead th{color:white;padding:8px 11px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--gris1)}
+tbody tr:hover td{background:var(--gris0)}
+tbody tr.total-row td{background:var(--gris1);font-weight:700;border-top:2px solid var(--gris2)}
+td{padding:7px 11px;vertical-align:middle}
+
+/* PILLS */
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill.ok{background:var(--teal-s);color:#0a5a3a}
+.pill.warn{background:var(--ambar-s);color:var(--ambar)}
+.pill.bad{background:var(--rojo-s);color:var(--rojo)}
+.pill.neu{background:var(--gris1);color:var(--gris3)}
+.pill.blu{background:var(--azul-s);color:var(--azul-c)}
+
+/* BAR */
+.bar-w{width:100%;background:var(--gris1);border-radius:4px;height:8px;overflow:hidden}
+.bar-f{height:8px;border-radius:4px;background:var(--teal);transition:width .4s}
+.bar-f.a{background:var(--ambar)}.bar-f.r{background:var(--rojo)}
+
+/* TAG */
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.tag.eco{background:#F3E8FF;color:#6B21A8}
+.tag.prod{background:#DBEAFE;color:#1E40AF}
+.tag.infra{background:#D1FAE5;color:#065F46}
+.tag.all{background:var(--gris1);color:var(--gris3)}
+
+/* ─── ORGANIGRAMA ─── */
+.org-scroll{overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:8px}
+.org-tree{min-width:1100px;padding:8px 0}
+.o-row{display:flex;justify-content:center;align-items:flex-start;gap:0;position:relative}
+.vline{width:2px;height:22px;background:var(--gris2);margin:0 auto}
+.hbar{display:flex;justify-content:center;position:relative}
+.hbar::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:calc(100% - 80px);height:2px;background:var(--gris2)}
+.o-col{display:flex;flex-direction:column;align-items:center;padding:0 10px}
+.o-vdown{width:2px;height:20px;background:var(--gris2)}
+
+/* Box types */
+.ob{border-radius:var(--r);padding:10px 14px;text-align:center;border:2px solid;position:relative;transition:transform .15s,box-shadow .15s;cursor:default;min-width:120px}
+.ob:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.13)}
+.ob .obn{font-size:12px;font-weight:700;line-height:1.25}
+.ob .obs{font-size:10.5px;font-weight:400;opacity:.7;margin-top:2px;line-height:1.3}
+.ob .obe{font-size:10.5px;font-weight:800;margin-top:5px;display:inline-block;background:rgba(0,0,0,.12);border-radius:4px;padding:1px 7px}
+
+.ob.nivel0{background:var(--azul);border-color:var(--azul);color:white;min-width:300px;padding:14px 18px}
+.ob.nivel0 .obn{font-size:14px}
+.ob.dg1{background:var(--azul-m);border-color:var(--azul-c);color:white;min-width:200px}
+.ob.dg2{background:#1A4A80;border-color:#4A90D9;color:white;min-width:200px}
+.ob.ds{background:var(--teal-s);border-color:var(--teal);color:#0a4a2a;min-width:130px}
+.ob.coord{background:white;border-color:var(--gris2);border-style:dashed;color:var(--gris3);min-width:110px;font-size:11px}
+.ob.ref-eco{background:#F3E8FF;border-color:#9333EA;color:#581C87;min-width:115px}
+.ob.ref-prod{background:#DBEAFE;border-color:#2563EB;color:#1E3A8A;min-width:115px}
+.ob.ref-infra{background:#D1FAE5;border-color:#059669;color:#064E3B;min-width:115px}
+.ob.med{background:#F0FDF4;border-color:#16A34A;color:#14532D;min-width:130px}
+
+/* ─── BENCHMARK CHART ─── */
+.bm-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--gris1)}
+.bm-row:last-child{border:none}
+.bm-lbl{width:230px;font-size:12px;flex-shrink:0}
+.bm-bar-wrap{flex:1;background:var(--gris1);border-radius:4px;height:18px;overflow:hidden}
+.bm-bar{height:18px;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:700;color:white;min-width:30px;transition:width .6s ease}
+.bm-val{width:44px;text-align:right;font-size:12px;font-weight:700;color:var(--gris3);flex-shrink:0}
+
+/* ─── SIMULADOR ─── */
+.sim-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:740px){.sim-layout{grid-template-columns:1fr}}
+.sldr-row{margin-bottom:14px}
+.sldr-row label{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin-bottom:5px;color:var(--gris3)}
+.sldr-row label strong{color:var(--azul);font-size:13px}
+input[type=range]{width:100%;accent-color:var(--teal);cursor:pointer;height:4px}
+.result-panel{background:var(--azul);border-radius:var(--r2);padding:22px;color:white}
+.result-panel h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.55;margin-bottom:8px}
+.res-big{font-size:52px;font-weight:900;line-height:1;color:var(--teal)}
+.res-sub{font-size:12.5px;opacity:.65;margin-top:6px}
+.res-rows{margin-top:18px}
+.res-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:12px}
+.res-row:last-child{border:none}
+.res-row.total{border-top:2px solid rgba(255,255,255,.25);margin-top:4px;padding-top:10px;font-weight:700;font-size:13px}
+.bm-mini{margin-top:18px;border-top:1px solid rgba(255,255,255,.15);padding-top:14px}
+.bm-mini-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.bm-mini-row:last-child{border:none}
+
+/* ─── GRID CARDS ─── */
+.competencias-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:6px}
+.ccomp{border:var(--borde);border-radius:var(--r);padding:14px;background:white}
+.ccomp h4{font-size:12.5px;font-weight:700;color:var(--azul);margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--gris1)}
+.ccomp ul{padding-left:15px;font-size:12px;color:var(--gris3);line-height:1.9}
+.ccomp ul li{margin-bottom:1px}
+
+/* ── PROGRAMAS ── */
+.prog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:4px}
+.prog-sec{border-radius:var(--r2);border:2px solid var(--gris2);background:white;overflow:hidden;box-shadow:var(--sombra)}
+.prog-sec-head{padding:12px 16px;display:flex;align-items:center;gap:10px}
+.prog-sec-head h3{font-size:12.5px;font-weight:700;color:white;line-height:1.3;margin:0}
+.prog-sec-badge{font-size:9.5px;font-weight:700;color:white;opacity:.75;margin-top:2px}
+.prog-sec-body{padding:12px 16px}
+.prog-item{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--gris1)}
+.prog-item:last-child{border:none}
+.prog-sigla{flex-shrink:0;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;margin-top:1px;text-transform:uppercase;letter-spacing:.04em}
+.prog-info{}
+.prog-nombre{font-size:12px;font-weight:600;color:var(--gris8);line-height:1.3}
+.prog-desc{font-size:11px;color:var(--gris3);margin-top:2px;line-height:1.4}
+.prog-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.prog-tag{font-size:10px;padding:1px 7px;border-radius:10px;font-weight:600}
+.prog-tag.ej{background:#D1FAE5;color:#065F46}
+.prog-tag.fi{background:#DBEAFE;color:#1E40AF}
+.prog-tag.fin{background:var(--gris1);color:var(--gris3)}
+.prog-tag.ley{background:#FEF3CD;color:#92400E}
+.prog-tag.rigi{background:#F3E8FF;color:#6B21A8}
+.prog-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.prog-filter button{padding:5px 14px;border-radius:20px;border:1px solid var(--gris2);background:white;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--gris3);transition:all .15s}
+.prog-filter button.on{background:var(--azul);color:white;border-color:var(--azul)}
+
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-mark">RH</div>
+    <div class="nav-logo-text">Subsecretaría de RRHH<span>APN · Ministerio de Economía</span></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="ntab on"  onclick="go('sga',this)">Estructura · SGA</button>
+    <button class="ntab"     onclick="go('org',this)">Estructura · SSRRhh</button>
+    <button class="ntab"     onclick="go('programas',this)">Programas · Secretarías</button>
+    <button class="ntab"     onclick="go('bajas',this)">Bajas · SAF Producción</button>
+    <button class="ntab"     onclick="go('tramites',this)">Trámites 2025</button>
+    <button class="ntab"     onclick="go('dotacion',this)">Modelo de dotación</button>
+    <button class="ntab"     onclick="go('benchmarks',this)">Benchmarks</button>
+    <button class="ntab"     onclick="go('sim',this)">Simulador</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     PANEL 1 · ORGANIGRAMA
+═══════════════════════════════════════════════════════ -->
+<div id="p-org" class="panel">
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Estructura propuesta · 2 DG · 5 DS · 1 DG Local SAF</h2>
+        <div class="card-sub">7.500 agentes · 3 SAF · 108 efectivos totales propuestos</div>
+      </div>
+    </div>
+    <div class="info-bar">
+      Se incorpora una tercera Dirección General — <strong>DG de Atención Local por Jurisdicción</strong> — que actúa como ventanilla única presencial en cada uno de los 3 SAF (Producción, Infraestructura, Asuntos Económicos). Absorbe la interacción directa con el agente y las tramitaciones de primer nivel, liberando a las Direcciones Simples técnicas para el procesamiento sustantivo.
+    </div>
+
+    <div class="org-scroll"><div class="org-tree">
+
+      <!-- ── Nivel 0 · SSRRhh ── -->
+      <div class="o-row">
+        <div class="o-col">
+          <div class="ob nivel0">
+            <div class="obn">Subsecretaría de Recursos Humanos</div>
+            <div class="obs">Secretaría Legal y Administrativa</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Dependencia directa SSRRhh: Dir. Medicina ── -->
+      <div style="display:flex;justify-content:center;margin-top:0">
+        <div class="o-col" style="align-items:center">
+          <div class="o-vdown"></div>
+          <!-- Bifurcación: rama izquierda (Medicina) + rama central (3 DG) -->
+          <div style="display:flex;align-items:flex-start;gap:0">
+
+            <!-- Medicina — dependencia directa SSRRhh -->
+            <div style="display:flex;flex-direction:column;align-items:center;margin-right:32px">
+              <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#16A34A;margin-bottom:6px;white-space:nowrap">Dependencia directa SSRRhh</div>
+              <div class="ob med" style="min-width:148px">
+                <div class="obn">Dir. Medicina</div>
+                <div class="obn">Hig. y Seg.</div>
+                <div class="obs">B III · Ley 19.587</div>
+              </div>
+              <div class="o-vdown"></div>
+              <div style="display:flex;gap:6px">
+                <div class="ob coord" style="min-width:66px"><div class="obn" style="font-size:10px">Coord. Serv. Médico</div><div class="obs">B IV</div></div>
+                <div class="ob coord" style="min-width:66px"><div class="obn" style="font-size:10px">Coord. Hig. y Seg.</div><div class="obs">B IV</div></div>
+              </div>
+            </div>
+
+            <!-- Separador -->
+            <div style="width:2px;background:var(--gris2);height:120px;margin-top:24px;margin-right:32px"></div>
+
+            <!-- Columna de las 3 DG -->
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <div class="o-vdown" style="height:30px"></div>
+              <!-- Barra horizontal hacia 3 DG -->
+              <div style="display:flex;align-items:flex-start;position:relative">
+                <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:calc(100% - 60px);height:2px;background:var(--gris2)"></div>
+
+                <!-- DG 1 · Gestión de Personal -->
+                <div class="o-col" style="padding:0 10px">
+                  <div class="o-vdown"></div>
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--azul-c);margin-bottom:6px;text-align:center">DG I</div>
+                  <div class="ob dg1" style="min-width:160px">
+                    <div class="obn">DG Gestión</div>
+                    <div class="obn">de Personal</div>
+                    <div class="obs">A I</div>
+                  </div>
+                  <div class="o-vdown"></div>
+                  <!-- DS bajo DG1 -->
+                  <div style="display:flex;gap:8px;align-items:flex-start">
+
+                    <!-- Dir. Adm. de Personal — 2 coords de la imagen -->
+                    <div style="display:flex;flex-direction:column;align-items:center">
+                      <div class="ob ds" style="min-width:108px"><div class="obn" style="font-size:11px">Dir. Adm. de Personal</div><div class="obs">B III</div></div>
+                      <div class="o-vdown"></div>
+                      <div style="display:flex;gap:4px">
+                        <div class="ob coord" style="min-width:68px"><div class="obn" style="font-size:10px">Coord. Gestión de Personal</div><div class="obs" style="font-size:9px">B IV</div></div>
+                        <div class="ob coord" style="min-width:68px"><div class="obn" style="font-size:10px">Coord. Contrat. de Personal</div><div class="obs" style="font-size:9px">B IV</div></div>
+                      </div>
+                    </div>
+
+                    <!-- Dir. Liq. de Haberes — 4 coords -->
+                    <div style="display:flex;flex-direction:column;align-items:center">
+                      <div class="ob ds" style="min-width:108px"><div class="obn" style="font-size:11px">Dir. Liq. de Haberes</div><div class="obs">B III</div></div>
+                      <div class="o-vdown"></div>
+                      <div style="display:flex;gap:4px;justify-content:center">
+                        <div class="ob coord" style="min-width:68px"><div class="obn" style="font-size:10px">Coord. Impositiva</div><div class="obs" style="font-size:9px">B IV</div></div>
+                        <div class="ob coord" style="min-width:68px"><div class="obn" style="font-size:10px">Coord. Comp. y Beneficios</div><div class="obs" style="font-size:9px">B IV</div></div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- DG 2 · Desarrollo y Planificación -->
+                <div class="o-col" style="padding:0 10px">
+                  <div class="o-vdown"></div>
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--azul-c);margin-bottom:6px;text-align:center">DG II</div>
+                  <div class="ob dg1" style="min-width:160px;background:#1A4A80;border-color:#4A90D9">
+                    <div class="obn">DG Desarrollo y</div>
+                    <div class="obn">Planif. de RRHH</div>
+                    <div class="obs">A I</div>
+                  </div>
+                  <div class="o-vdown"></div>
+                  <!-- DS bajo DG2 -->
+                  <div style="display:flex;gap:8px;align-items:flex-start">
+
+                    <!-- Dir. Carrera y Desarrollo — 2 coords propuestas -->
+                    <div style="display:flex;flex-direction:column;align-items:center">
+                      <div class="ob ds" style="min-width:108px;background:#EBF4FF;border-color:#4A90D9;color:#1A3A6B"><div class="obn" style="font-size:11px">Dir. Carrera y Desarrollo</div><div class="obs">B III</div></div>
+                      <div class="o-vdown"></div>
+                      <div style="display:flex;gap:4px">
+                        <div class="ob coord" style="min-width:68px;border-color:#4A90D9"><div class="obn" style="font-size:10px">Coord. Carrera y Rel. Lab.</div><div class="obs" style="font-size:9px">B IV</div></div>
+                        <div class="ob coord" style="min-width:68px;border-color:#4A90D9"><div class="obn" style="font-size:10px">Coord. Capacitación</div><div class="obs" style="font-size:9px">B IV</div></div>
+                      </div>
+                    </div>
+
+                    <!-- Dir. Planif. y Análisis — 2 coords actualizadas -->
+                    <div style="display:flex;flex-direction:column;align-items:center">
+                      <div class="ob ds" style="min-width:108px;background:#EBF4FF;border-color:#4A90D9;color:#1A3A6B"><div class="obn" style="font-size:11px">Dir. Planif. y Análisis</div><div class="obs">B III</div></div>
+                      <div class="o-vdown"></div>
+                      <div style="display:flex;gap:4px">
+                        <div class="ob coord" style="min-width:68px;border-color:#4A90D9"><div class="obn" style="font-size:10px">Coord. Datos y Estadística</div><div class="obs" style="font-size:9px">B IV</div></div>
+                        <div class="ob coord" style="min-width:68px;border-color:#4A90D9"><div class="obn" style="font-size:10px">Coord. Planif. de Dotación</div><div class="obs" style="font-size:9px">B IV</div></div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- DG 3 · Atención Local -->
+                <div class="o-col" style="padding:0 10px">
+                  <div class="o-vdown"></div>
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ambar);margin-bottom:6px;text-align:center">DG III · nueva</div>
+                  <div class="ob dg1" style="min-width:160px;background:#92400E;border-color:#D4820A">
+                    <div class="obn">DG Atención Local</div>
+                    <div class="obn">por Jurisdicción</div>
+                    <div class="obs">A I</div>
+                  </div>
+                  <div class="o-vdown"></div>
+                  <!-- 3 Coordinaciones SAF -->
+                  <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+                    <div class="ob ref-eco" style="min-width:180px">
+                      <span class="tag eco" style="font-size:9px">Asuntos Económicos</span>
+                      <div class="obn" style="font-size:11px;margin-top:4px">Coord. SAF 362 · MECON</div>
+                      <div class="obs">B IV</div>
+                    </div>
+                    <div class="ob ref-prod" style="min-width:180px">
+                      <span class="tag prod" style="font-size:9px">Producción</span>
+                      <div class="obn" style="font-size:11px;margin-top:4px">Coord. SAF 363 · Prod.</div>
+                      <div class="obs">B IV</div>
+                    </div>
+                    <div class="ob ref-infra" style="min-width:180px">
+                      <span class="tag infra" style="font-size:9px">Infraestructura</span>
+                      <div class="obn" style="font-size:11px;margin-top:4px">Coord. SAF 364 · Infra.</div>
+                      <div class="obs">B IV</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div></div>
+  </div>
+
+  <!-- Competencias DG Local -->
+  <div class="card">
+    <div class="card-head"><h2>DG Atención Local por Jurisdicción — competencias por Referencia SAF</h2></div>
+    <div class="ok-bar">Cada Referencia SAF se organiza en 3 núcleos: <strong>Ventanilla de atención al agente</strong> · <strong>Soporte documental y pre-control</strong> · <strong>Seguimiento de trámites y comunicaciones</strong>.</div>
+    <div class="competencias-grid">
+      <div class="ccomp">
+        <h4>Atención directa al agente</h4>
+        <ul>
+          <li>Mesa de consulta presencial y virtual (ticketera)</li>
+          <li>Recepción y pre-control de documentación de ingreso</li>
+          <li>Certificaciones simples y constancias inmediatas</li>
+          <li>Información sobre estado de trámites en curso</li>
+          <li>Atención de urgencias del día (novedades de asistencia)</li>
+        </ul>
+      </div>
+      <div class="ccomp">
+        <h4>Soporte documental y derivación</h4>
+        <ul>
+          <li>Armado de pre-expediente antes de elevación técnica</li>
+          <li>Derivación calificada a cada DS según tipo de trámite</li>
+          <li>Control de integridad documental (6–8 documentos)</li>
+          <li>Vinculación con GDE y carga inicial en sistemas</li>
+          <li>Comunicación de novedades a Liquidaciones y Asistencias</li>
+        </ul>
+      </div>
+      <div class="ccomp">
+        <h4>Seguimiento y comunicaciones</h4>
+        <ul>
+          <li>Monitoreo del estado de trámites por agente</li>
+          <li>Difusión de comunicados institucionales del SAF</li>
+          <li>Reportería de demanda mensual a DG RRHH</li>
+          <li>Coordinación con secretarías sustantivas</li>
+          <li>Feedback de calidad de atención al Subsecretario</li>
+        </ul>
+      </div>
+      <div class="ccomp">
+        <h4>Justificación de la segunda DG</h4>
+        <ul>
+          <li>1.804 consultas directas/año solo en Contratos (1 SAF)</li>
+          <li>Estimación: 8.000–10.000 interacciones/año en 3 SAF</li>
+          <li>Evita contaminación del trabajo técnico de las DS</li>
+          <li>Modelo de HR Shared Services (AFIP, ANMAT, UK Civil)</li>
+          <li>Permite respuesta en 24–48 hs sin perder procesamiento</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     PANEL 2 · TRÁMITES
+═══════════════════════════════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════════════════════
+     PANEL SGA · SUBSECRETARÍA DE GESTIÓN ADMINISTRATIVA
+═══════════════════════════════════════════════════════ -->
+<div id="p-sga" class="panel on">
+
+<!-- TABLERO DE CARGOS -->
+<div class="card" id="sga-dashboard-card">
+  <div class="card-head"><h2>Tablero de cargos — resumen de la estructura</h2><div class="card-sub" id="sga-dash-updated"></div></div>
+  <div class="metrics" id="sga-dash-metrics"></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:4px" id="sga-dash-detail"></div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div>
+      <h2>Subsecretaría de Gestión Administrativa — estructura organizativa</h2>
+      <div class="card-sub">Editor interactivo · podés agregar y eliminar unidades organizativas</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="exportSGA()" style="padding:7px 14px;background:var(--teal);color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">↓ Exportar JSON</button>
+      <button onclick="resetSGA()" style="padding:7px 14px;background:var(--gris1);color:var(--gris3);border:1px solid var(--gris2);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">↺ Restablecer</button>
+    </div>
+  </div>
+  <div class="info-bar">Hacé clic en cualquier unidad para <strong>agregar subunidades</strong> o <strong>eliminarla</strong>. Las unidades marcadas con 🔒 no se pueden eliminar (son la conducción de la SSSubsecretaría).</div>
+
+  <!-- ORGANIGRAMA SVG DINÁMICO -->
+  <div id="sga-org-wrap" style="overflow-x:auto;scrollbar-width:none;padding:8px 0">
+    <div id="sga-org" style="min-width:900px;padding:8px 16px"></div>
+  </div>
+</div>
+
+<!-- PANEL LATERAL: EDICIÓN DE UNIDAD -->
+<div id="sga-editor" style="display:none" class="card">
+  <div class="card-head"><h2 id="sga-edit-title">Editar unidad</h2>
+    <button onclick="closeEditor()" style="padding:4px 12px;background:var(--gris1);border:1px solid var(--gris2);border-radius:6px;cursor:pointer;font-size:12px">✕ Cerrar</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div>
+      <div class="section-label">Agregar subunidad</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <select id="new-tipo" style="padding:7px 10px;border:var(--borde);border-radius:6px;font-size:13px">
+          <option value="dg">Dirección General (DG)</option>
+          <option value="ds">Dirección Simple (DS)</option>
+          <option value="coord">Coordinación</option>
+        </select>
+        <input id="new-nombre" type="text" placeholder="Nombre de la unidad..." style="padding:7px 10px;border:var(--borde);border-radius:6px;font-size:13px">
+        <input id="new-titular" type="text" placeholder="Titular (opcional)..." style="padding:7px 10px;border:var(--borde);border-radius:6px;font-size:13px">
+        <button onclick="addUnit()" style="padding:8px;background:var(--teal);color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">+ Agregar</button>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Eliminar unidad seleccionada</div>
+      <div id="sga-del-info" style="font-size:12.5px;color:var(--gris3);margin-bottom:10px">Seleccioná una unidad en el organigrama.</div>
+      <button id="sga-del-btn" onclick="deleteUnit()" style="padding:8px 16px;background:var(--rojo);color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;display:none">🗑 Eliminar esta unidad</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAREAS COORD. GESTIÓN OO.DD. -->
+<div class="card" id="card-gpmod">
+  <div class="card-head">
+    <div>
+      <h2>Coordinación de Gestión, Planeamiento y Monitoreo de Organismos Descentralizados</h2>
+      <div class="card-sub">Dependencia: Dirección General de Administración  ·  Función Ejecutiva B IV  ·  Nueva unidad propuesta</div>
+    </div>
+  </div>
+  <div class="info-bar">
+    El Ministerio de Economía tiene en su órbita más de 50 organismos descentralizados y entes del Sector Público Nacional (ARCA, INTA, SENASA, INTI, INPI, CNV, SSN, TFN, ANAC, DNV, ANSV, CNRT, ORSNA, SEGEMAR, INIDEP, INV, INA, ORSEP, TTN, entre otros). Esta Coordinación actúa como enlace administrativo entre la DGA y dichos organismos, sin sustituir las competencias sustantivas de las secretarías de línea.
+  </div>
+  <div class="section-label">Acciones</div>
+  <div class="competencias-grid">
+    <div class="ccomp">
+      <h4>1. Gestión administrativa de la vinculación</h4>
+      <ul>
+        <li>Mantener actualizado el registro de organismos descentralizados, entes autárquicos y sociedades del Estado en la órbita del Ministerio, con indicación de su base legal, autoridades vigentes y estructura aprobada.</li>
+        <li>Gestionar en GDE los expedientes de vinculación entre la DGA y los organismos: convenios, acuerdos de transferencia de fondos, afectaciones presupuestarias cruzadas y actos administrativos conexos.</li>
+        <li>Coordinar con la Dirección de Presupuesto, Contabilidad y Finanzas el seguimiento de los créditos presupuestarios asignados a los organismos que tramiten en el ámbito de la DGA.</li>
+        <li>Asistir a las autoridades de los organismos en los trámites administrativos que requieran intervención de la DGA o de la Subsecretaría de Gestión Administrativa.</li>
+      </ul>
+    </div>
+    <div class="ccomp">
+      <h4>2. Planeamiento y normativa organizacional</h4>
+      <ul>
+        <li>Intervenir en los procesos de creación, modificación y aprobación de estructuras organizativas de los organismos descentralizados en la órbita del Ministerio, en articulación con la Dirección Nacional de Diseño Organizacional (SSMoDEP) y la Secretaría Legal y Administrativa.</li>
+        <li>Analizar las propuestas de modificación de plantas de personal, dotaciones y cargos de los organismos, elaborando los informes técnicos previos para la intervención de la DGA.</li>
+        <li>Verificar la coherencia entre las estructuras organizativas aprobadas de los organismos y sus dotaciones de personal vigentes, conforme a los lineamientos del Decreto 934/2025 y normas complementarias.</li>
+        <li>Asistir en la elaboración de proyectos de actos administrativos (decretos y resoluciones) que afecten la organización, fusión, transferencia o supresión de organismos descentralizados en la órbita del Ministerio.</li>
+      </ul>
+    </div>
+    <div class="ccomp">
+      <h4>3. Monitoreo de gestión y desempeño</h4>
+      <ul>
+        <li>Diseñar y mantener un tablero de seguimiento de indicadores de gestión de los organismos descentralizados: ejecución presupuestaria, dotación, estado de estructuras, planes de capacitación y cumplimiento normativo.</li>
+        <li>Elaborar informes periódicos (trimestrales y anuales) sobre el estado de situación administrativa de los organismos, para consideración de la Dirección General y la Subsecretaría.</li>
+        <li>Monitorear el cumplimiento de los requerimientos de información que los organismos deben remitir al Ministerio: memorias anuales, estados contables, informes de la UAI, planes estratégicos y reportes de gestión.</li>
+        <li>Articular con la Unidad de Auditoría Interna (UAI) y la SIGEN el seguimiento de observaciones y recomendaciones vinculadas a la gestión administrativa de los organismos descentralizados.</li>
+      </ul>
+    </div>
+    <div class="ccomp">
+      <h4>4. Coordinación de recursos humanos de OO.DD.</h4>
+      <ul>
+        <li>Gestionar los trámites de personal que los organismos descentralizados eleven a la DGA o a la Subsecretaría: designaciones, subrogaciones, pases en comisión y afectaciones de personal entre el Ministerio y sus organismos.</li>
+        <li>Articular con la Dirección General de Recursos Humanos la coherencia de las políticas de personal aplicadas en los organismos con los lineamientos del Ministerio.</li>
+        <li>Consolidar la información de dotación de los organismos descentralizados para su integración en los reportes de la SSMoDEP, RIPRE y los sistemas de información de empleo público (SIGI, SIRHU).</li>
+        <li>Intervenir en la tramitación de designaciones transitorias y subrogaciones en cargos de organismos descentralizados, conforme al Decreto 958/2024 y normas complementarias.</li>
+      </ul>
+    </div>
+    <div class="ccomp">
+      <h4>5. Enlace con organismos del SAF y auditoría</h4>
+      <ul>
+        <li>Actuar como enlace entre la DGA y los Servicios Administrativos Financieros (SAF) de los organismos descentralizados en la jurisdicción del Ministerio, facilitando la aplicación homogénea de las normas de administración financiera (Ley 24.156).</li>
+        <li>Coordinar la remisión y recepción de información financiero-contable de los organismos hacia la Contaduría General de la Nación y la SIGEN, en el marco del régimen de rendición de cuentas del Sector Público Nacional.</li>
+        <li>Gestionar la atención de requerimientos de información provenientes de organismos de control (AGN, SIGEN, UAI) y del Congreso Nacional referidos a los organismos descentralizados en la órbita del Ministerio.</li>
+      </ul>
+    </div>
+    <div class="ccomp">
+      <h4>Organismos en la órbita del MECON (selección)</h4>
+      <ul>
+        <li><strong>Fiscales:</strong> ARCA · TFN · CNV · SSN</li>
+        <li><strong>Productivos:</strong> INTA · INTI · SENASA · INPI · INV · INIDEP · INA · SEGEMAR</li>
+        <li><strong>Transporte:</strong> ANAC · ANSV · DNV · CNRT · ORSNA · JST</li>
+        <li><strong>Energía/Nuclear:</strong> CNEA · ORSEP · ENRGE</li>
+        <li><strong>Otros:</strong> TTN · Tribunal de Tasaciones · ARICCAME · Autoridad Nac. de la Competencia</li>
+        <li style="color:var(--ambar)">Fuente: Mapa del Estado — Administración Descentralizada MECON · actualización 01/06/2026</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- LISTA DE UNIDADES -->
+<div class="card">
+  <div class="card-head"><h2>Listado de unidades organizativas</h2></div>
+  <table>
+    <thead><tr><th>Unidad</th><th>Tipo</th><th>Depende de</th><th>Titular</th><th>Acciones</th></tr></thead>
+    <tbody id="sga-list-body"></tbody>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════
+     MÓDULO COMPARATIVO: ESTRUCTURA ACTUAL vs PROPUESTA
+════════════════════════════════════════════════════════ -->
+<div class="card" style="margin-top:0">
+  <div class="card-head">
+    <div>
+      <h2>Comparativo de cargos — Estructura actual vs. Propuesta</h2>
+      <div class="card-sub">Reducción de estructura — Subsecretaría de Gestión Administrativa de Producción</div>
+    </div>
+  </div>
+  <div class="warn-bar">La estructura actual corresponde a la <strong>Subsecretaría de Gestión Administrativa de Producción</strong>. La propuesta reduce y racionaliza esa estructura, eliminando niveles intermedios (Departamentos), fusionando funciones duplicadas y concentrando las Coordinaciones en las Direcciones Simples sustantivas.</div>
+
+  <!-- MÉTRICAS COMPARATIVAS -->
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:start;margin-bottom:20px">
+
+    <!-- ACTUAL -->
+    <div>
+      <div style="background:var(--rojo);color:white;border-radius:8px 8px 0 0;padding:10px 16px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Estructura actual — SSgA Producción</div>
+      <div style="border:2px solid var(--rojo);border-top:none;border-radius:0 0 8px 8px;padding:14px 16px;background:var(--rojo-s)">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+          <div class="met" style="border-color:var(--rojo)"><div class="met-num r" style="font-size:22px">4</div><div class="met-lbl">DG</div></div>
+          <div class="met" style="border-color:var(--rojo)"><div class="met-num r" style="font-size:22px">16</div><div class="met-lbl">Dir. Simples</div></div>
+          <div class="met" style="border-color:var(--rojo)"><div class="met-num r" style="font-size:22px">28</div><div class="met-lbl">Coordinaciones</div></div>
+          <div class="met" style="border-color:var(--rojo)"><div class="met-num r" style="font-size:22px">17</div><div class="met-lbl">Departamentos</div></div>
+        </div>
+        <div style="text-align:center;padding:8px;background:var(--rojo);border-radius:6px;color:white">
+          <div style="font-size:30px;font-weight:900;line-height:1">65</div>
+          <div style="font-size:11px;opacity:.8;margin-top:2px">Unidades organizativas totales (actual)</div>
+        </div>
+        <div style="text-align:center;padding:6px;margin-top:6px;background:rgba(185,28,28,.1);border-radius:6px;color:var(--rojo);font-size:11px;font-weight:600">
+          Incluye 4 DG · 16 DS · 22 Coordinaciones · 17 Departamentos
+        </div>
+      </div>
+    </div>
+
+    <!-- FLECHA CENTRAL -->
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:40px;gap:6px">
+      <div style="font-size:28px;color:var(--teal)">→</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gris3);text-align:center">Estructura<br>racionalizada</div>
+    </div>
+
+    <!-- PROPUESTA -->
+    <div>
+      <div style="background:var(--teal);color:white;border-radius:8px 8px 0 0;padding:10px 16px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Estructura propuesta — SSgA racionalizada</div>
+      <div style="border:2px solid var(--teal);border-top:none;border-radius:0 0 8px 8px;padding:14px 16px;background:var(--teal-s)">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+          <div class="met" style="border-color:var(--teal)"><div class="met-num t" style="font-size:22px" id="comp-pro-dg">—</div><div class="met-lbl">DG</div></div>
+          <div class="met" style="border-color:var(--teal)"><div class="met-num t" style="font-size:22px" id="comp-pro-ds">—</div><div class="met-lbl">Dir. Simples</div></div>
+          <div class="met" style="border-color:var(--teal)"><div class="met-num t" style="font-size:22px" id="comp-pro-co">—</div><div class="met-lbl">Coordinaciones</div></div>
+          <div class="met" style="border-color:var(--teal)"><div class="met-num t" style="font-size:22px">0</div><div class="met-lbl">Departamentos</div></div>
+        </div>
+        <div style="text-align:center;padding:8px;background:var(--teal);border-radius:6px;color:white">
+          <div style="font-size:30px;font-weight:900;line-height:1" id="comp-pro-tot">—</div>
+          <div style="font-size:11px;opacity:.8;margin-top:2px">Unidades organizativas totales (propuesta)</div>
+        </div>
+        <div style="text-align:center;padding:6px;margin-top:6px;background:rgba(29,158,117,.1);border-radius:6px;color:var(--teal);font-size:11px;font-weight:600">
+          Reducción: −74% unidades · Eliminación total de departamentos y dependencias duplicadas
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA POR NIVEL JERÁRQUICO -->
+  <div class="section-label">Comparativo por nivel jerárquico</div>
+  <div style="overflow-x:auto">
+    <table class="data-table" id="tbl-comp">
+      <thead>
+        <tr>
+          <th>Nivel jerárquico</th>
+          <th>Estructura actual</th>
+          <th>Estructura propuesta</th>
+          <th>Variación</th>
+          <th>% reducción</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-comp"></tbody>
+    </table>
+  </div>
+
+  <hr class="section-sep" style="margin:20px 0">
+
+  <!-- DETALLE ESTRUCTURA ACTUAL -->
+  <div class="section-label">Detalle estructura actual por Dirección General — SAF Producción</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px" id="actual-detail"></div>
+</div>
+
+<script>
+// ── Datos estructura actual (SAF Producción) ──────────────────
+const ACTUAL_SGA = [
+  { dg:'DG de Recursos Humanos', ds:[
+      'Dir. de Administración y Gestión de Personal',
+      'Dir. de Planeamiento del Personal',
+      'Dir. de Liquidaciones',
+      'Dir. de Carrera y Relaciones Laborales',
+      'Dir. de RRHH de Agricultura, Ganadería y Pesca',
+    ],
+    coords:[
+      'Coord. de Contratación del Personal',
+      'Coord. de Estadísticas del Personal',
+      'Coord. de Liquidación de Haberes',
+      'Coord. de Adm. y Gestión del Personal Agric.',
+      'Coord. de Liquidación de Haberes Agric.',
+      'Coord. de Carrera y Capacitación Agric.',
+      'Coord. de Medicina y Seguridad Agric.',
+      'Coord. de Desarrollo de Carrera',
+    ],
+    deptos:[
+      'Dpto. de Legajos, Certificaciones y Asistencia',
+      'Dpto. de Adm. de Cargos y Proyectos',
+      'Dpto. de Capacitación y Comunicaciones',
+      'Dpto. de Selección y Evaluación',
+      'Dpto. de Servicio Médico',
+      'Div. de Salud Mental',
+    ],
+  },
+  { dg:'DG de Administración de Industria, PyMe, Comercio y Minería', ds:[
+      'Dir. de Presupuesto',
+      'Dir. de Contabilidad y Finanzas',
+      'Dir. de Compras y Contrataciones',
+      'Dir. de Servicios Técnicos y Operativos',
+      'Dir. de Administración de Agricultura, Ganadería y Pesca',
+    ],
+    coords:[
+      'Coord. de Programación Financiera',
+      'Coord. de Compras y Contrataciones',
+      'Coord. de Patrimonio y Suministros',
+      'Coord. de Tesorería',
+      'Coord. de Control y Análisis Contable',
+      'Coord. de Recursos Operativos',
+      'Coord. de Servicios Generales',
+      'Coord. de Infraestructura Edilicia',
+      'Coord. de Planeamiento y Control de Gestión Adm.',
+      'Coord. de Presupuesto Agric.',
+      'Coord. de Compras y Contrataciones Agric.',
+      'Coord. de Técnica Operativa Agric.',
+      'Coord. de Contabilidad y Finanzas Agric.',
+      'Coord. de Tesorería Agric.',
+    ],
+    deptos:[
+      'Dpto. Operativo Financiero',
+      'Dpto. de Obras y Servicios',
+      'Dpto. de Arquitectura',
+      'Dpto. de Control de Acceso',
+      'Dpto. de Automotores',
+      'Dpto. de Viáticos y Pasajes',
+      'Dpto. de Impuestos',
+    ],
+  },
+  { dg:'DG de Tecnologías de la Información y las Comunicaciones', ds:[
+      'Dir. de Infraestructura y Seguridad Informática',
+      'Dir. de Desarrollo de Sistemas',
+      'Dir. de Coordinación Informática',
+      'Dir. de TIC de Agricultura, Ganadería y Pesca',
+    ],
+    coords:[
+      'Coord. de Operaciones y Telecomunicaciones',
+      'Coord. de Soporte y Atención al Usuario',
+      'Coord. de Integración Tecnológica',
+      'Coord. de Programación de Sistemas',
+      'Coord. de Análisis y Diseño de Sistemas',
+      'Coord. de Administración de Proyectos',
+      'Coord. de Infraestructura, Seguridad y Soporte Informático',
+    ],
+    deptos:[
+      'Dpto. de Planeamiento y Control de Gestión Informática',
+      'Dpto. de Redes',
+      'Dpto. de Soporte Informático',
+    ],
+  },
+  { dg:'DG de Programas y Proyectos Sectoriales y Especiales', ds:[
+      'Dir. Nal. Gral. de Programas y Proyectos Sectoriales',
+      'Dir. de Gestión y Monitoreo de Programas y Proyectos',
+      'Dir. de Ejecución y Gestión Operativa',
+    ],
+    coords:[],
+    deptos:[],
+  },
+];
+
+const ACTUAL_DIRECT = [
+  { tipo:'ds', nombre:'Dir. de Gestión Documental' },
+  { tipo:'ds', nombre:'Dir. de Gestión Documental de Agric., Gan. y Pesca' },
+];
+
+// ── Propuesta ──────────────────────────────────────────────────
+const PROPUESTA_SGA = [
+  { dg:'DG de Recursos Humanos', ds:['Dir. Administ. y Desarrollo de RRHH','Dir. Liquidación de Haberes'],
+    coords:['Coord. Contratación de Personal','Coord. Desarrollo de Carrera'] },
+  { dg:'DG Tecnologías de la Inf. y Comun.', ds:[],
+    coords:['Coord. Infraestructura, Seg. y Soporte','Coord. Desarrollo de Sistemas'] },
+  { dg:'DG de Administración', ds:['Dir. Compras, Patrimonio y Suministros','Dir. Presupuesto, Contabilidad y Finanzas'],
+    coords:['Coord. Servicios Generales','Coord. Programación Presupuestaria','Coord. Tesorería','Coord. Gestión, Planeamiento y Monitoreo de Organismos Descentralizados'] },
+  { dg:'DG Programas y Proyectos Sectoriales', ds:[], coords:[] },
+];
+
+function buildComparativo(){
+  // Calcular totales actuales
+  const act_dg  = ACTUAL_SGA.length;
+  const act_ds  = ACTUAL_SGA.reduce((s,d)=>s+d.ds.length,0) + ACTUAL_DIRECT.length;
+  const act_co  = ACTUAL_SGA.reduce((s,d)=>s+d.coords.length,0);
+  const act_dep = ACTUAL_SGA.reduce((s,d)=>s+d.deptos.length,0);
+  const act_tot = act_dg + act_ds + act_co + act_dep;
+
+  // Calcular totales propuestos DESDE sgaData (fuente de verdad dinámica)
+  const pro_dg  = sgaData.filter(n=>n.tipo==='dg').length;
+  const pro_ds  = sgaData.filter(n=>n.tipo==='ds').length;
+  const pro_co  = sgaData.filter(n=>n.tipo==='coord').length;
+  const pro_dep = 0;
+  const pro_tot = pro_dg + pro_ds + pro_co;
+
+  // Actualizar tarjetas de métricas de la propuesta
+  const _pDG = document.getElementById('comp-pro-dg');
+  const _pDS = document.getElementById('comp-pro-ds');
+  const _pCO = document.getElementById('comp-pro-co');
+  const _pTT = document.getElementById('comp-pro-tot');
+  if(_pDG) _pDG.textContent = pro_dg;
+  if(_pDS) _pDS.textContent = pro_ds;
+  if(_pCO) _pCO.textContent = pro_co;
+  if(_pTT) _pTT.textContent = pro_tot;
+
+  const rows = [
+    ['Direcciones Generales (A I)',  act_dg,  pro_dg,  pro_dg-act_dg],
+    ['Direcciones Simples (B III)', act_ds,  pro_ds,  pro_ds-act_ds],
+    ['Coordinaciones (B IV)',        act_co,  pro_co,  pro_co-act_co],
+    ['Departamentos / Divisiones',  act_dep, pro_dep, pro_dep-act_dep],
+    ['TOTAL',                        act_tot, pro_tot, pro_tot-act_tot],
+  ];
+
+  const tb = document.getElementById('tbody-comp');
+  tb.innerHTML = '';
+  rows.forEach((r,i)=>{
+    const var_ = r[4];
+    const pct  = r[1]>0 ? Math.round((1-r[2]/r[1])*100) : 0;
+    const isTotal = i===rows.length-1;
+    const varCls = var_<0 ? 'ok' : 'bad';
+    const varStr = var_>=0 ? '+'+var_ : ''+var_;
+    tb.innerHTML += `<tr${isTotal?' class="total-row"':''}>
+      <td${isTotal?' style="font-weight:700"':''}>${r[0]}</td>
+      <td style="text-align:center">${r[1]}</td>
+      <td style="text-align:center"><strong>${r[2]}</strong></td>
+      <td style="text-align:center"><span class="pill ${varCls}">${varStr}</span></td>
+      <td style="text-align:center"><span class="pill ${pct>0?'ok':'bad'}">${pct>0?'−'+pct+'%':'+'+Math.abs(pct)+'%'}</span></td>
+    </tr>`;
+  });
+
+  // Detalle por DG actual
+  const det = document.getElementById('actual-detail');
+  det.innerHTML = '';
+  ACTUAL_SGA.forEach(dg=>{
+    const total = 1 + dg.ds.length + dg.coords.length + dg.deptos.length;
+    det.innerHTML += `
+      <div class="ccomp">
+        <h4 style="border-bottom-color:var(--rojo-s)">${dg.dg}</h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="pill bad">${1} DG</span>
+          ${dg.ds.length?`<span class="pill warn">${dg.ds.length} Dir. Simples</span>`:''}
+          ${dg.coords.length?`<span class="pill neu">${dg.coords.length} Coords.</span>`:''}
+          ${dg.deptos.length?`<span class="pill neu">${dg.deptos.length} Deptos.</span>`:''}
+          <span class="pill ok" style="margin-left:auto">${total} unidades</span>
+        </div>
+        <ul style="font-size:11px;color:var(--gris3);line-height:1.9;padding-left:14px;margin:0">
+          ${dg.ds.map(d=>`<li>${d}</li>`).join('')}
+          ${dg.coords.slice(0,4).map(d=>`<li style="color:var(--gris3)">${d}</li>`).join('')}
+          ${dg.coords.length>4?`<li style="color:var(--gris3);opacity:.6">+ ${dg.coords.length-4} coordinaciones más...</li>`:''}
+          ${dg.deptos.length?`<li style="color:var(--gris3);opacity:.6">${dg.deptos.length} departamento${dg.deptos.length>1?'s':''}</li>`:''}
+        </ul>
+      </div>`;
+  });
+  // Add direct deps
+  det.innerHTML += `
+    <div class="ccomp">
+      <h4 style="border-bottom-color:var(--ambar-s)">Dependencias directas de la Subsecretaría</h4>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <span class="pill warn">${ACTUAL_DIRECT.length} Dir. Simples</span>
+      </div>
+      <ul style="font-size:11px;color:var(--gris3);line-height:1.9;padding-left:14px;margin:0">
+        ${ACTUAL_DIRECT.map(d=>`<li>${d.nombre} <em style="font-size:10px;color:var(--ambar)">(absorbida por jurisdicción central en propuesta)</em></li>`).join('')}
+      </ul>
+    </div>`;
+}
+
+// Llamar en init
+buildComparativo();
+</script>
+</div>
+<!-- /p-sga -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     PANEL PROGRAMAS · SECRETARÍAS DE PRODUCCIÓN
+═══════════════════════════════════════════════════════ -->
+<div id="p-programas" class="panel">
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Programas por Secretaría — ámbito productivo del Ministerio de Economía</h2>
+        <div class="card-sub">Secretaría de Coordinación de Producción · Sec. de Agricultura, Ganadería y Pesca · Sec. de Industria, Comercio y PyME · vigencia actualizada al Decreto 146/2026</div>
+      </div>
+    </div>
+    <div class="info-bar"><strong>Decreto 146/2026 (12/03/2026):</strong> suprimió la Sec. de Industria y Comercio y la Sec. PyME, creando la <strong>Sec. de Industria, Comercio y de la Pequeña y Mediana Empresa</strong>. El <strong>Decreto 215/2026</strong> asignó el ejercicio de sus competencias al titular de la Sec. de Coordinación de Producción. La Sec. de Coordinación de Producción no ejecuta programas propios: su rol es articular y hacer seguimiento de los que ejecutan las secretarías de línea.</div>
+
+    <!-- Filtros -->
+    <div class="prog-filter" id="prog-filters">
+      <button class="on" onclick="filtrarProg('todos',this)">Todos</button>
+      <button onclick="filtrarProg('coordinacion',this)">Coordinación de Producción</button>
+      <button onclick="filtrarProg('agro',this)">Agricultura, Ganadería y Pesca</button>
+      <button onclick="filtrarProg('industria',this)">Industria, Comercio y PyME</button>
+      <button onclick="filtrarProg('ej',this)">Solo en ejecución</button>
+    </div>
+
+    <div class="prog-grid" id="prog-container"></div>
+  </div>
+
+  <!-- TABLA RESUMEN -->
+  <div class="card">
+    <div class="card-head"><h2>Tabla resumen de programas</h2></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Sigla / Nombre</th>
+          <th>Secretaría</th>
+          <th>Financiamiento</th>
+          <th>Estado</th>
+          <th>Descripción</th>
+        </tr>
+      </thead>
+      <tbody id="prog-tabla-body"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// ── DATOS DE PROGRAMAS ───────────────────────────────────────────────────
+const PROG_DATA = {
+  coordinacion: {
+    nombre: 'Secretaría de Coordinación de Producción',
+    color: '#0C2340',
+    sub: 'Rol coordinador — no ejecuta programas sectoriales propios',
+    programas: [
+      {
+        sigla: 'SEGUIMIENTO',
+        nombre: 'Evaluación y Seguimiento de Gestión de Producción',
+        desc: 'La Subsecretaría de Evaluación y Seguimiento de Gestión de Producción monitorea los planes, programas y proyectos de las secretarías de línea (Agricultura y PyME). Instrumento de coordinación interna.',
+        estado: 'ejecucion', fin: 'Presupuesto nacional', nac: true,
+        tags: ['ej','nac']
+      },
+      {
+        sigla: 'RIGI',
+        nombre: 'Régimen de Incentivo para Grandes Inversiones',
+        desc: 'Aplica en coordinación con Sec. de Industria, Comercio y PyME. Incentivos fiscales y regulatorios para inversiones ≥ USD 200 M (minería, energía, agroindustria, tecnología). Ley 27.742.',
+        estado: 'ejecucion', fin: 'Ley 27.742 — Presupuesto nacional', nac: true,
+        tags: ['ej','nac','rigi']
+      },
+    ]
+  },
+  agro: {
+    nombre: 'Secretaría de Agricultura, Ganadería y Pesca',
+    color: '#15803D',
+    sub: 'Ejecutados mayormente a través de la DIPROSE (DG de Programas y Proyectos Sectoriales y Especiales)',
+    programas: [
+      // ─── PROGRAMAS NACIONALES ───────────────────────────────────────────
+      { sigla:'CAMBIO RURAL', nombre:'Programa Cambio Rural',
+        desc:'Extensión rural y periurbana con 30 años de ejecución ininterrumpida. Co-ejecutado con INTA. Brinda un aporte mensual no reembolsable para honorarios del promotor-asesor durante 42 meses.',
+        estado:'ejecucion', fin:'Presupuesto — SAGyP / INTA', nac:true, tags:['ej','nac'] },
+      { sigla:'PROLANA', nombre:'Programa de Lanas',
+        desc:'Mejora de la calidad e inocuidad de la lana argentina para mercados internacionales. Estandarización de esquila y acondicionamiento. Recientemente relanzado con foco en lana peinada de exportación. Co-ejecutado con INTA.',
+        estado:'ejecucion', fin:'Presupuesto — SAGyP', nac:true, tags:['ej','nac'] },
+      { sigla:'PROBIOMASA', nombre:'Programa Nacional de Bioenergía',
+        desc:'Fomento del uso de biomasa para generación de energía en zonas rurales. Financiado con presupuesto nacional y recursos del FONDAGRO.',
+        estado:'ejecucion', fin:'Presupuesto — FONDAGRO', nac:true, tags:['ej','nac'] },
+      { sigla:'PRONTAR', nombre:'Programa Nacional de Desarrollo de la Acuicultura',
+        desc:'Fomento de la acuicultura continental y marina en todo el país. Financiado íntegramente con presupuesto nacional de la SAGyP.',
+        estado:'ejecucion', fin:'Presupuesto — SAGyP', nac:true, tags:['ej','nac'] },
+      { sigla:'IDER', nombre:'Programa de Áreas Rurales',
+        desc:'Extensión rural e infraestructura periurbana. Herramienta de asistencia técnica con recursos nacionales de la SAGyP.',
+        estado:'ejecucion', fin:'Presupuesto — SAGyP', nac:true, tags:['ej','nac'] },
+      { sigla:'FONDAGRO', nombre:'Fondo Fiduciario Nacional de Agroindustria',
+        desc:'Fideicomiso nacional (Ley 27.341, fiduciante MECON, fiduciario BICE Fideicomisos S.A.). Otorga créditos, garantías, bonificación de tasas y ANR para el sector agroindustrial, sanidad, agricultura familiar y producciones regionales.',
+        estado:'ejecucion', fin:'Fideicomiso nacional — Ley 27.341', nac:true, tags:['ej','nac'] },
+      { sigla:'PROINEX', nombre:'Programa Nacional de Apoyo a Universidades Nacionales (PROINEX)',
+        desc:'Financia proyectos de investigación y extensión en universidades nacionales para agricultura sostenible, ganadería, forestación y AgTech. ANR a través de FONDAGRO.',
+        estado:'ejecucion', fin:'FONDAGRO — Presupuesto nacional', nac:true, tags:['ej','nac'] },
+      { sigla:'BIODESARROLLAR', nombre:'Programa Nacional Biodesarrollo Argentino',
+        desc:'Apoyo a PyMEs y cooperativas en desarrollo de bioproductos (bioinsumos, biomateriales, bioenergía). Financia con recursos FONDAGRO y partidas presupuestarias.',
+        estado:'ejecucion', fin:'FONDAGRO — Presupuesto', nac:true, tags:['ej','nac'] },
+      { sigla:'GUANACO', nombre:'Plan Nacional para el Manejo del Guanaco',
+        desc:'Establece estándares para el uso comercial sustentable del guanaco en la Patagonia. Coordinado con provincias. Financiamiento nacional.',
+        estado:'ejecucion', fin:'Presupuesto — SAGyP', nac:true, tags:['ej','nac'] },
+      { sigla:'25MT TRIGO', nombre:'Plan Argentina 25 Millones de Toneladas de Trigo',
+        desc:'Programa de asesoramiento directo a pequeños y medianos productores de trigo. Coordinación SAGyP-INTA-provincias. Financiamiento nacional.',
+        estado:'ejecucion', fin:'Presupuesto — SAGyP / INTA', nac:true, tags:['ej','nac'] },
+      // ─── PROGRAMAS CON FINANCIAMIENTO EXTERNO (para referencia) ─────────
+      { sigla:'PROSAP', nombre:'Programa de Servicios Agrícolas Provinciales',
+        desc:'Financia infraestructura rural y tecnología para el agro en las provincias. Uno de los más longevos. Ejecución DIPROSE.',
+        estado:'ejecucion', fin:'BID / BIRF', nac:false, tags:['ej','fi'] },
+      { sigla:'GanAr', nombre:'Ganadería Argentina Ambientalmente Sustentable',
+        desc:'Ganadería bovina sostenible: trazabilidad, tipificación de res, sostenibilidad ambiental y marca-país. Tres ejes: financiamiento, asistencia técnica y marca.',
+        estado:'ejecucion', fin:'BIRF / BM', nac:false, tags:['ej','fi'] },
+      { sigla:'GIRSAR', nombre:'Gestión Integral de Riesgos en el Sistema Agroindustrial Rural',
+        desc:'Gestión de riesgos climáticos y productivos para agricultores vulnerables. Seguros agrícolas e inversiones adaptativas.',
+        estado:'ejecucion', fin:'BIRF / BM', nac:false, tags:['ej','fi'] },
+      { sigla:'AGRO XXI', nombre:'Agricultura XXI',
+        desc:'Modernización del sistema de sanidad e inocuidad agroalimentaria (SENASA) y desarrollo de cadenas de valor agropecuario.',
+        estado:'ejecucion', fin:'BID', nac:false, tags:['ej','fi'] },
+      { sigla:'PROCANOR', nombre:'Inserción Económica de Productores Familiares del Norte Argentino',
+        desc:'Desarrollo de clústers en cadenas de valor emergentes en el NOA y NEA. Productores familiares. €33,75 M. Ejecutado por DIPROSE.',
+        estado:'ejecucion', fin:'FIDA', nac:false, tags:['ej','fi'] },
+      { sigla:'PRODECCA', nombre:'Desarrollo de Economías Campesinas y Agricultura Familiar',
+        desc:'Desarrollo de cadenas caprinas y agricultura familiar. Financiado parcialmente por FIDA. Ejecución DIPROSE.',
+        estado:'ejecucion', fin:'FIDA (parcial)', nac:false, tags:['ej','fi'] },
+      { sigla:'PROSAF', nombre:'Promoción de Sistemas Agroalimentarios Resilientes y Sostenibles',
+        desc:'Fortalecimiento de agricultura familiar con enfoque en resiliencia y sostenibilidad. USD 36,1 M totales entre FIDA y FONPLATA.',
+        estado:'ejecucion', fin:'FIDA / FONPLATA', nac:false, tags:['ej','fi'] },
+      { sigla:'SyCF/PROTAAL', nombre:'Sustentabilidad y Competitividad Forestal / PROTAAL',
+        desc:'Manejo forestal sustentable y competitividad de la cadena foresto-industrial.',
+        estado:'ejecucion', fin:'BID', nac:false, tags:['ej','fi'] },
+      { sigla:'PRODAF', nombre:'Desarrollo Rural y Agricultura Familiar (Chaco y Entre Ríos)',
+        desc:'Apoyó productores familiares en cadenas bovina, algodonera, citrícola y tambera. USD 36 M. Finalizado.',
+        estado:'finalizado', fin:'BID', nac:false, tags:['fin','fi'] },
+      { sigla:'PRODERI', nombre:'Programa para el Desarrollo Rural Incluyente',
+        desc:'Inclusión productiva de familias rurales vulnerables. Finalizado.',
+        estado:'finalizado', fin:'FIDA', nac:false, tags:['fin','fi'] },
+      { sigla:'PRODESPA', nombre:'Desarrollo Pesquero y Acuícola Sustentable',
+        desc:'Pesca sostenible y acuicultura. Finalizado.',
+        estado:'finalizado', fin:'BIRF', nac:false, tags:['fin','fi'] },
+      { sigla:'PROICSA', nombre:'Incremento de Competitividad del Sector Azucarero',
+        desc:'Modernización del sector azucarero del NOA. Finalizado.',
+        estado:'finalizado', fin:'BID', nac:false, tags:['fin','fi'] },
+    ]
+  },
+  industria: {
+    nombre: 'Secretaría de Industria, Comercio y de la PyME',
+    color: '#1E40AF',
+    sub: 'Competencias ejercidas por el Sec. de Coordinación de Producción (Decreto 215/2026)',
+    programas: [
+      // ─── PROGRAMAS NACIONALES ───────────────────────────────────────────
+      { sigla:'MiPyME', nombre:'Certificado MiPyME',
+        desc:'Categorización de micro, pequeñas y medianas empresas. Otorga: contribuciones patronales 18%, pago diferido de IVA, exclusión de retenciones ARCA, beneficios aduaneros. Actualizado Res. 1/2026.',
+        estado:'ejecucion', fin:'Leyes 24.467 y 25.300 — Presupuesto', nac:true, tags:['ej','nac','ley'] },
+      { sigla:'CF-CAP', nombre:'Crédito Fiscal para Capacitación PyME',
+        desc:'Reintegro de hasta 100% de la inversión en capacitación del personal mediante certificado electrónico de crédito fiscal (cancela Ganancias, IVA, impuestos internos, aduaneros). Ley 22.317. Cupo anual fijado por Presupuesto.',
+        estado:'ejecucion', fin:'Ley 22.317 — Presupuesto nacional', nac:true, tags:['ej','nac','ley'] },
+      { sigla:'PAC', nombre:'Programa de Apoyo a la Competitividad',
+        desc:'ANR de hasta 70–85% para proyectos de: Transformación Digital, Kaizen 4.0, Calidad e Inocuidad Alimentaria, Diseño e Innovación, Desarrollo Exportador. Herramienta 100% nacional de la Subsecretaría PyME.',
+        estado:'ejecucion', fin:'Presupuesto nacional — ANR', nac:true, tags:['ej','nac'] },
+      { sigla:'SGR/FoGAr', nombre:'Sociedades de Garantía Recíproca / Fondo de Garantías Argentino',
+        desc:'Sistema nacional de garantías para que PyMEs accedan al crédito bancario en mejores condiciones. Las SGR emiten avales; el FoGAr actúa como refuerzo de riesgo. Leyes 24.467 y 25.300.',
+        estado:'ejecucion', fin:'Leyes 24.467 / 25.300 — nacional', nac:true, tags:['ej','nac','ley'] },
+      { sigla:'FONDEP', nombre:'Fondo Nacional para el Desarrollo Productivo',
+        desc:'Bonificación de tasas de interés en líneas de crédito del sistema financiero para PyMEs que invierten en bienes de capital y proyectos productivos. Administrado por la Subsecretaría PyME.',
+        estado:'ejecucion', fin:'Presupuesto nacional', nac:true, tags:['ej','nac'] },
+      { sigla:'DISEÑO', nombre:'Plan de Diseño / Sello del Buen Diseño Argentino',
+        desc:'Fortalece la competitividad industrial mediante diseño. Dos modalidades: PYMES D (asesoramiento) y Sello del Buen Diseño (certificación de excelencia). Financiado con presupuesto nacional.',
+        estado:'ejecucion', fin:'Presupuesto nacional', nac:true, tags:['ej','nac'] },
+      { sigla:'PARQUES IND.', nombre:'Programa Parques Industriales',
+        desc:'Financia obras de infraestructura dentro y fuera de parques industriales públicos y fomenta la radicación de PyMEs en ellos. Recursos del FONDEP y presupuesto nacional.',
+        estado:'ejecucion', fin:'FONDEP — Presupuesto', nac:true, tags:['ej','nac'] },
+      { sigla:'SPL', nombre:'Programa Sistemas Productivos Locales',
+        desc:'Asistencia técnica y económica a Grupos Asociativos de PyMEs para implementar, desarrollar y/o fortalecer proyectos productivos que beneficien a las empresas participantes y a la comunidad.',
+        estado:'ejecucion', fin:'Presupuesto nacional', nac:true, tags:['ej','nac'] },
+      { sigla:'IND 4.0', nombre:'Plan Industria Argentina 4.0',
+        desc:'Transformación tecnológica del sector productivo: digitalización, gestión y organización estratégica en PyMEs industriales. Coordinación SAGyP-INTA-provincias.',
+        estado:'ejecucion', fin:'Presupuesto nacional', nac:true, tags:['ej','nac'] },
+      { sigla:'BONIF.TASAS', nombre:'Bonificación de Tasas para PyMEs Exportadoras',
+        desc:'Reducción de tasas en créditos de prefinanciación y financiación de exportaciones para MiPyMEs. Administrado por Subsecretaría PyME en articulación con el BCRA y bancos comerciales.',
+        estado:'ejecucion', fin:'Presupuesto nacional', nac:true, tags:['ej','nac'] },
+      { sigla:'SUNITI', nombre:'Sistema Único de Identificación de Talles de Indumentaria',
+        desc:'Estandarización de talles de ropa en Argentina. Obligatorio para la industria textil. Autoridad de aplicación: Subsecretaría de la Pequeña y Mediana Empresa. Ley 27.521.',
+        estado:'ejecucion', fin:'Ley 27.521 — regulatorio', nac:true, tags:['ej','nac','ley'] },
+      { sigla:'VIGILANCIA', nombre:'Protocolo de Vigilancia de Mercado',
+        desc:'Control, verificación, fiscalización y sanción sobre productos comercializados en el territorio nacional (metrología, seguridad, rotulado). Aprobado Res. 56/2026.',
+        estado:'ejecucion', fin:'Leyes 24.240 / 19.511 — regulatorio', nac:true, tags:['ej','nac','ley'] },
+      { sigla:'DEF.CONS.', nombre:'Defensa del Consumidor y Lealtad Comercial',
+        desc:'Aplicación de: Ley 24.240 (Defensa del Consumidor), Dec. 274/19 (Lealtad Comercial), Ley 25.065 (Tarjetas de Crédito), Ley 26.682 (Medicina Prepaga), SIMELA (Ley 19.511). Subsecretaría de Defensa del Consumidor.',
+        estado:'ejecucion', fin:'Régimen regulatorio — Leyes nacionales', nac:true, tags:['ej','nac','ley'] },
+      // ─── INSTRUMENTOS CON COMPONENTE LEGAL / FISCAL ─────────────────────
+      { sigla:'EC', nombre:'Ley de Economía del Conocimiento',
+        desc:'Régimen de promoción para software, biotecnología, servicios exportables y producción audiovisual. Beneficios: reducción de contribuciones patronales, bono de crédito fiscal para I+D. Ley 27.506.',
+        estado:'ejecucion', fin:'Ley 27.506 — régimen fiscal nacional', nac:true, tags:['ej','nac','ley'] },
+      { sigla:'TDF', nombre:'Régimen Tierra del Fuego',
+        desc:'Exención impositiva y aduanera para industria electrónica y manufactura en Tierra del Fuego. Incluye Aduana en Factoría (Dec. 688/02) y bienes de capital usados. Ley 19.640.',
+        estado:'ejecucion', fin:'Ley 19.640 — régimen fiscal nacional', nac:true, tags:['ej','nac','ley'] },
+      { sigla:'RIGI', nombre:'Régimen de Incentivo para Grandes Inversiones',
+        desc:'Incentivos fiscales y regulatorios para proyectos de inversión ≥ USD 200 M en sectores estratégicos. Estabilidad tributaria y cambiaria por 30 años. Ley 27.742.',
+        estado:'ejecucion', fin:'Ley 27.742 — régimen fiscal nacional', nac:true, tags:['ej','nac','rigi','ley'] },
+    ]
+  }
+};
+
+// ── RENDER ───────────────────────────────────────────────────────────────
+const COLORS = {
+  nac:  { bg:'#D1FAE5', color:'#14532D', label:'Financ. nacional' },
+  ej:   { bg:'#D1FAE5', color:'#065F46', label:'En ejecución' },
+  fi:   { bg:'#DBEAFE', color:'#1E40AF', label:'Financ. externo' },
+  fin:  { bg:'var(--gris1)', color:'var(--gris3)', label:'Finalizado' },
+  ley:  { bg:'#FEF3CD', color:'#92400E', label:'Marco legal' },
+  rigi: { bg:'#F3E8FF', color:'#6B21A8', label:'RIGI' },
+};
+
+let filtroActivo = 'todos';
+
+function buildProgramas() {
+  renderGrid(filtroActivo);
+  renderTabla(filtroActivo);
+}
+
+function filtrarProg(filtro, btn) {
+  filtroActivo = filtro;
+  document.querySelectorAll('#prog-filters button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderGrid(filtro);
+  renderTabla(filtro);
+}
+
+function renderGrid(filtro) {
+  const cont = document.getElementById('prog-container');
+  cont.innerHTML = '';
+
+  Object.entries(PROG_DATA).forEach(([secId, sec]) => {
+    if (filtro !== 'todos' && filtro !== 'ej' && filtro !== 'nac' && filtro !== 'fi' && filtro !== secId) return;
+
+    let progs = sec.programas;
+    if (filtro === 'ej')  progs = progs.filter(p => p.estado === 'ejecucion');
+    if (filtro === 'nac') progs = progs.filter(p => p.nac === true);
+    if (filtro === 'fi')  progs = progs.filter(p => p.nac === false);
+    if (!progs.length) return;
+
+    const card = document.createElement('div');
+    card.className = 'prog-sec';
+    card.innerHTML = `
+      <div class="prog-sec-head" style="background:${sec.color}">
+        <div>
+          <h3>${sec.nombre}</h3>
+          <div class="prog-sec-badge">${sec.sub}</div>
+        </div>
+        <span style="margin-left:auto;flex-shrink:0;background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;color:white">${progs.length} prog.</span>
+      </div>
+      <div class="prog-sec-body">
+        ${progs.map(p => `
+          <div class="prog-item">
+            <span class="prog-sigla" style="background:${sec.color}22;color:${sec.color}">${p.sigla}</span>
+            <div class="prog-info">
+              <div class="prog-nombre">${p.nombre}</div>
+              <div class="prog-desc">${p.desc}</div>
+              <div class="prog-tags">
+                ${p.tags.map(t => `<span class="prog-tag ${t}">${(COLORS[t]||{label:t}).label}</span>`).join('')}
+                <span style="font-size:10px;color:var(--gris3);margin-left:auto">${p.fin}</span>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    cont.appendChild(card);
+  });
+}
+
+function renderTabla(filtro) {
+  const tb = document.getElementById('prog-tabla-body');
+  tb.innerHTML = '';
+  const SNOMBRE = {
+    coordinacion: 'Coord. Producción',
+    agro:         'Agricultura, Gan. y Pesca',
+    industria:    'Industria, Comercio y PyME'
+  };
+  let total = 0;
+  Object.entries(PROG_DATA).forEach(([secId, sec]) => {
+    if (filtro !== 'todos' && filtro !== 'ej' && filtro !== 'nac' && filtro !== 'fi' && filtro !== secId) return;
+    let progs = sec.programas;
+    if (filtro === 'ej')  progs = progs.filter(p => p.estado === 'ejecucion');
+    if (filtro === 'nac') progs = progs.filter(p => p.nac === true);
+    if (filtro === 'fi')  progs = progs.filter(p => p.nac === false);
+    progs.forEach(p => {
+      total++;
+      const esBadge = p.estado === 'ejecucion'
+        ? `<span class="pill ok">En ejecución</span>`
+        : `<span class="pill neu">Finalizado</span>`;
+      tb.innerHTML += `<tr>
+        <td><strong>${p.sigla}</strong><br><span style="font-size:11.5px;color:var(--gris3)">${p.nombre}</span></td>
+        <td><span style="font-size:11px;color:var(--gris3)">${SNOMBRE[secId]||secId}</span></td>
+        <td style="font-size:11.5px">${p.fin}</td>
+        <td>${esBadge}</td>
+        <td style="font-size:11.5px;color:var(--gris3)">${p.desc}</td>
+      </tr>`;
+    });
+  });
+  // Fila total
+  tb.innerHTML += `<tr class="total-row"><td colspan="4">TOTAL PROGRAMAS</td><td style="text-align:left">${total} programas</td></tr>`;
+}
+
+buildProgramas();
+</script>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     PANEL BAJAS · SAF PRODUCCIÓN
+═══════════════════════════════════════════════════════ -->
+<div id="p-bajas" class="panel">
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Dotación y bajas propuestas — SAF Producción</h2>
+        <div class="card-sub">Distribución por área administrativa · editable · persiste en este navegador y exportable a JSON</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="exportBajasJSON()" style="padding:7px 14px;background:var(--teal);color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">↓ Exportar JSON</button>
+        <label style="padding:7px 14px;background:var(--azul-s);color:var(--azul-c);border:1px solid var(--azul-c);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
+          ↑ Importar JSON
+          <input type="file" accept=".json" onchange="importBajasJSON(event)" style="display:none">
+        </label>
+        <button onclick="resetBajas()" style="padding:7px 14px;background:var(--gris1);color:var(--gris3);border:1px solid var(--gris2);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">↺ Restablecer</button>
+      </div>
+    </div>
+    <div class="warn-bar">Las cifras corresponden exclusivamente al <strong>SAF Producción</strong>. <strong>Bajas propuestas por MDYTE</strong>: criterio del Ministerio de Desregulación y Transformación del Estado, basado en benchmark de productividad. <strong>Bajas propuestas por SSGP</strong>: ajuste editable de la Subsecretaría de Gestión de Personal, que puede revisar el criterio MDYTE según el contexto de cada área. La <strong>dotación requerida</strong> se calcula como Dotación actual − Bajas SSGP. Hacé clic en cualquier celda de "Bajas SSGP" o "CUD+Deleg.+Lic." para editarla.</div>
+    <div class="metrics" id="met-bajas"></div>
+  </div>
+
+  <!-- TABLA COMPARATIVA -->
+  <div class="card">
+    <div class="card-head"><h2>Comparativo por área — dotación, bajas y condicionantes</h2></div>
+    <div style="overflow-x:auto">
+    <table id="tbl-bajas">
+      <thead>
+        <tr>
+          <th rowspan="2" style="vertical-align:middle">Área administrativa</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center">Dotación<br>actual</th>
+          <th colspan="2" style="text-align:center;background:#7F1D1D">Bajas propuestas</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center">Dotación<br>requerida</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center">% reducción<br>(SSGP)</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center">Dotación CUD +<br>Delegados + Licencias</th>
+          <th rowspan="2" style="vertical-align:middle;min-width:160px">Comparativo</th>
+        </tr>
+        <tr>
+          <th style="text-align:center;background:#991B1B">por MDYTE</th>
+          <th style="text-align:center;background:#1D9E75">por SSGP</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-bajas"></tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- GRÁFICO DOBLE BARRA -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Dotación requerida vs. bajas por área — gráfico comparativo</h2>
+      <div style="display:flex;gap:14px;align-items:center;font-size:11.5px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:14px;border-radius:3px;background:#1D9E75;display:inline-block"></span>Dotación requerida</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:14px;border-radius:3px;background:#B91C1C;display:inline-block"></span>Bajas SSGP</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:14px;height:14px;border-radius:3px;background:#C07A00;display:inline-block"></span>CUD+Deleg.+Lic.</span>
+      </div>
+    </div>
+    <div id="bajas-chart" style="margin-top:6px"></div>
+  </div>
+
+</div>
+
+<script>
+// ── Datos bajas SAF Producción ────────────────────────────────────────────
+// bajasMdyte: criterio original del Ministerio de Desregulación y Transf. del Estado (fijo, referencia)
+// bajasSsgp:  ajuste editable de la Subsecretaría de Gestión de Personal (modifica la dotación requerida)
+// cud:        Dotación con Certificado Único de Discapacidad + Delegados gremiales + Licencias prolongadas (informativo, no se descuenta)
+const BAJAS_DEFAULT = [
+  { area: 'Patrimonio y Servicios Generales',               actual: 349, bajasMdyte: 157, bajasSsgp: 157, cud: 0 },
+  { area: 'Informática',                                    actual: 139, bajasMdyte: 49,  bajasSsgp: 49,  cud: 0 },
+  { area: 'Recursos Humanos',                               actual: 122, bajasMdyte: 63,  bajasSsgp: 63,  cud: 0 },
+  { area: 'Programas y Proyectos Sectoriales y Especiales', actual: 73,  bajasMdyte: 49,  bajasSsgp: 49,  cud: 0 },
+  { area: 'Contabilidad, Presupuesto y Finanzas',           actual: 65,  bajasMdyte: 29,  bajasSsgp: 29,  cud: 0 },
+  { area: 'Compras',                                        actual: 16,  bajasMdyte: 8,   bajasSsgp: 8,   cud: 0 },
+];
+
+const LS_KEY = 'bajas_saf_produccion_v2';
+
+function loadBajas() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  } catch(e) { console.warn('No se pudo leer localStorage', e); }
+  return JSON.parse(JSON.stringify(BAJAS_DEFAULT));
+}
+
+function saveBajas() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(BAJAS_DATA)); } catch(e) { console.warn('No se pudo guardar', e); }
+}
+
+let BAJAS_DATA = loadBajas();
+
+function buildBajas() {
+  const totAct   = BAJAS_DATA.reduce((s,d)=>s+d.actual, 0);
+  const totMdyte = BAJAS_DATA.reduce((s,d)=>s+d.bajasMdyte, 0);
+  const totSsgp  = BAJAS_DATA.reduce((s,d)=>s+d.bajasSsgp, 0);
+  const totReq   = totAct - totSsgp;
+  const totCud   = BAJAS_DATA.reduce((s,d)=>s+(d.cud||0), 0);
+  const maxAct   = Math.max(...BAJAS_DATA.map(d=>d.actual));
+
+  // ── Métricas ────────────────────────────────────────────────────────────
+  document.getElementById('met-bajas').innerHTML = [
+    { n: totAct,                                  l: 'Dotación actual<br>SAF Producción',        c: 'r'  },
+    { n: totMdyte,                                l: 'Bajas propuestas<br>por MDYTE',             c: 'a'  },
+    { n: totSsgp,                                 l: 'Bajas propuestas<br>por SSGP',              c: 'a'  },
+    { n: totReq,                                  l: 'Dotación requerida<br>(actual − SSGP)',     c: 't'  },
+    { n: Math.round(totSsgp/totAct*100)+'%',      l: 'Reducción<br>promedio (SSGP)',              c: ''   },
+    { n: totCud,                                  l: 'CUD + Delegados<br>+ Licencias',            c: ''   },
+  ].map(m=>`<div class="met"><div class="met-num ${m.c}" style="font-size:${m.n.toString().length>5?'18px':'28px'}">${m.n}</div><div class="met-lbl">${m.l}</div></div>`).join('');
+
+  // ── Tabla ───────────────────────────────────────────────────────────────
+  const tb = document.getElementById('tbody-bajas');
+  tb.innerHTML = '';
+  BAJAS_DATA.forEach((d, i) => {
+    const req  = d.actual - d.bajasSsgp;
+    const pct  = d.actual ? Math.round(d.bajasSsgp / d.actual * 100) : 0;
+    const barR = Math.round(req / maxAct * 100);
+    const barB = Math.round(d.bajasSsgp / maxAct * 100);
+    const pillCls = pct >= 50 ? 'bad' : pct >= 35 ? 'warn' : 'ok';
+
+    tb.innerHTML += `<tr>
+      <td style="font-size:12.5px">${d.area}</td>
+      <td style="text-align:center"><strong style="color:var(--gris4)">${d.actual}</strong></td>
+      <td style="text-align:center;background:#FEF2F2"><span style="color:#7F1D1D;font-weight:600">${d.bajasMdyte}</span></td>
+      <td style="text-align:center;background:#E1F5EE">
+        <input type="number" value="${d.bajasSsgp}" min="0" max="${d.actual}"
+          oninput="updateBaja(${i},'bajasSsgp',this.value)"
+          style="width:56px;text-align:center;border:1px solid var(--teal);border-radius:4px;padding:3px;font-size:13px;font-weight:700;color:var(--teal)">
+      </td>
+      <td style="text-align:center"><strong style="color:var(--teal)">${req}</strong></td>
+      <td style="text-align:center"><span class="pill ${pillCls}">−${pct}%</span></td>
+      <td style="text-align:center">
+        <input type="number" value="${d.cud||0}" min="0"
+          oninput="updateBaja(${i},'cud',this.value)"
+          style="width:56px;text-align:center;border:1px solid var(--ambar);border-radius:4px;padding:3px;font-size:13px;font-weight:700;color:var(--ambar)">
+      </td>
+      <td style="min-width:200px;padding-right:8px">
+        <div style="position:relative;height:28px">
+          <div title="Dotación actual: ${d.actual}" style="position:absolute;top:0;left:0;width:${Math.round(d.actual/maxAct*100)}%;height:12px;background:var(--gris2);border-radius:2px"></div>
+          <div title="Dotación requerida: ${req}" style="position:absolute;top:0;left:0;width:${barR}%;height:12px;background:var(--teal);border-radius:2px;opacity:.85"></div>
+          <div title="Bajas SSGP: ${d.bajasSsgp}" style="position:absolute;top:14px;left:${barR}%;width:${barB}%;height:8px;background:var(--rojo);border-radius:2px;opacity:.7"></div>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  tb.innerHTML += `<tr class="total-row">
+    <td>TOTAL SAF Producción</td>
+    <td style="text-align:center">${totAct}</td>
+    <td style="text-align:center">${totMdyte}</td>
+    <td style="text-align:center">${totSsgp}</td>
+    <td style="text-align:center">${totReq}</td>
+    <td style="text-align:center"><span class="pill ok">−${Math.round(totSsgp/totAct*100)}%</span></td>
+    <td style="text-align:center">${totCud}</td>
+    <td></td>
+  </tr>`;
+
+  // ── Gráfico de doble barra horizontal ───────────────────────────────────
+  const chart = document.getElementById('bajas-chart');
+  chart.innerHTML = BAJAS_DATA.map(d => {
+    const req = d.actual - d.bajasSsgp;
+    const pR  = Math.round(req / maxAct * 100);
+    const pB  = Math.round(d.bajasSsgp / maxAct * 100);
+    const cudBadge = d.cud > 0 ? `<span style="color:var(--ambar);margin-left:6px">· ${d.cud} CUD/Deleg./Lic.</span>` : '';
+    return `
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+          <span style="font-size:12px;font-weight:600;color:var(--gris8)">${d.area}</span>
+          <span style="font-size:11px;color:var(--gris3)">${d.actual} → <strong style="color:var(--teal)">${req}</strong> <span style="color:var(--rojo);margin-left:4px">−${d.bajasSsgp}</span>${cudBadge}</span>
+        </div>
+        <div style="position:relative;height:22px;background:var(--gris1);border-radius:4px;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;height:100%;width:${pR}%;background:var(--teal);border-radius:4px 0 0 4px;display:flex;align-items:center;padding-left:6px">
+            <span style="font-size:10.5px;font-weight:700;color:white;white-space:nowrap">${pR>15?req+' ef.':''}</span>
+          </div>
+          <div style="position:absolute;top:0;left:${pR}%;height:100%;width:${pB}%;background:var(--rojo);opacity:.8;display:flex;align-items:center;padding-left:4px">
+            <span style="font-size:10px;font-weight:700;color:white;white-space:nowrap">${pB>8?'−'+d.bajasSsgp:''}</span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:2px">
+          <span style="font-size:10px;color:var(--gris3)">MDYTE: ${d.bajasMdyte} bajas${d.bajasMdyte!==d.bajasSsgp?' · SSGP ajustó '+(d.bajasSsgp>d.bajasMdyte?'+':'')+(d.bajasSsgp-d.bajasMdyte):''}</span>
+          <span style="font-size:10px;color:var(--gris3)">${d.actual?Math.round(d.bajasSsgp/d.actual*100):0}% de reducción</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  chart.innerHTML += `
+    <div style="border-top:2px solid var(--gris2);margin-top:8px;padding-top:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div style="font-size:12px;font-weight:700;color:var(--gris8)">TOTAL SAF Producción</div>
+      <div style="display:flex;gap:16px;font-size:12px;flex-wrap:wrap">
+        <span>Actual: <strong style="color:var(--gris4)">${totAct}</strong></span>
+        <span>MDYTE: <strong style="color:#7F1D1D">${totMdyte}</strong></span>
+        <span>SSGP: <strong style="color:var(--rojo)">−${totSsgp}</strong></span>
+        <span>Requerida: <strong style="color:var(--teal)">${totReq}</strong></span>
+        <span>CUD+Deleg.+Lic.: <strong style="color:var(--ambar)">${totCud}</strong></span>
+        <span class="pill ok">−${Math.round(totSsgp/totAct*100)}%</span>
+      </div>
+    </div>`;
+}
+
+function updateBaja(idx, field, value) {
+  const v = Math.max(0, parseInt(value) || 0);
+  BAJAS_DATA[idx][field] = v;
+  saveBajas();
+  buildBajas();
+}
+
+function exportBajasJSON() {
+  const payload = {
+    fuente: 'Simulador RRHH APN · Módulo de Bajas SAF Producción',
+    actualizado: new Date().toISOString(),
+    datos: BAJAS_DATA
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bajas_saf_produccion_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function importBajasJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const datos = Array.isArray(parsed) ? parsed : parsed.datos;
+      if (!Array.isArray(datos)) throw new Error('Formato inválido');
+      BAJAS_DATA = datos;
+      saveBajas();
+      buildBajas();
+      alert('Datos importados correctamente.');
+    } catch(err) {
+      alert('Error al importar JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function resetBajas() {
+  if (confirm('¿Restablecer los datos de bajas a los valores originales (MDYTE)?')) {
+    BAJAS_DATA = JSON.parse(JSON.stringify(BAJAS_DEFAULT));
+    saveBajas();
+    buildBajas();
+  }
+}
+
+buildBajas();
+</script>
+
+<div id="p-tramites" class="panel">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Trámites procesados 2025 — datos reales planilla DGRRHH</h2>
+        <div class="card-sub">SAF Producción · Subsecretaría de Gestión Administrativa de Producción · 98 agentes operativos</div>
+      </div>
+    </div>
+    <div class="warn-bar">Datos extraídos directamente del consolidado de procesos 2025. Corresponden al <strong>SAF Producción (~2.600 agentes, 35% del universo)</strong>. El total de los 3 SAF se estima aplicando factor de escala por participación relativa.</div>
+    <div class="metrics" id="met-tramites"></div>
+    <table id="tbl-tramites">
+      <thead><tr><th>Área / equipo</th><th>Agentes actuales</th><th>Trámites/tareas anuales</th><th>Horas anuales reales</th><th>Hs/tarea prom.</th><th>Dotac. indicativa</th><th>Dotac. operativa</th><th>Brecha</th><th>Trám./agente</th></tr></thead>
+      <tbody id="tbody-tramites"></tbody>
+    </table>
+  </div>
+
+  
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     PANEL 3 · DOTACIÓN
+═══════════════════════════════════════════════════════ -->
+<div id="p-dotacion" class="panel">
+  <div class="card">
+    <div class="card-head"><h2>Modelo de dotación indicativa — metodología horas/trámite</h2></div>
+    <div class="info-bar"><strong>Fórmula del modelo:</strong> Dotación indicativa = Horas anuales de carga de trabajo ÷ 1.760 hs efectivas por agente/año (220 días laborales × 8 hs). <strong>Ratio objetivo adoptado: 1 agente RRHH cada 48 agentes sustantivos</strong> (2,1% sobre planta). La <strong>Dir. de Medicina, Higiene y Seguridad depende directamente de la Subsecretaría</strong> y sus 21 efectivos se contabilizan por separado de las 3 DG. Fuente: planillas de procesos 2025, hoja "Modelo Dotacion".</div>
+    <div class="metrics" id="met-dot"></div>
+    <table id="tbl-dot">
+      <thead><tr><th>Unidad organizativa</th><th>SAF</th><th>Trámites/tareas anuales</th><th>Hs trabajo/año</th><th>Dotac. indicativa</th><th>Dotac. propuesta</th><th>Criterio clave</th><th>Cobertura</th></tr></thead>
+      <tbody id="tbody-dot"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Criterios por función — justificación normativa y operativa</h2></div>
+    <div class="competencias-grid">
+      <div class="ccomp">
+        <h4>Administración de personal</h4>
+        <ul>
+          <li><strong>Coord. Gestión de Personal:</strong> legajos físicos/GDE, altas, bajas, movimientos de planta, traslados, comisiones, SIGI/RIPRE</li>
+          <li><strong>Coord. Contratación de Personal:</strong> contratos Ley Marco, LOyS, LCT, Ley 1109; designaciones, subrogaciones; DJPI/EGCC/OA</li>
+          <li>307 agentes/legajista (benchmark MECON)</li>
+          <li>Carga SARHA (6 módulos) + GANGES (4 módulos)</li>
+        </ul>
+      </div>
+      <div class="ccomp">
+        <h4>Liquidación de haberes</h4>
+        <ul>
+          <li><strong>Coord. Impositiva:</strong> retenciones AFIP/GANANCIAS, informes 4ta categoría, SUSS, ANSES, certificados de retención</li>
+          <li><strong>Coord. Compensaciones y Beneficios:</strong> suplementos, adicionales, horas extra, bonificaciones, obra social y mutual</li>
+          <li>16.171 operaciones anuales reales (1 SAF) · SIDIF · SARHA</li>
+          <li>Separación por SAF para liquidación mensual del núcleo operativo</li>
+        </ul>
+      </div>
+      <div class="ccomp">
+        <h4>Carrera y desarrollo</h4>
+        <ul>
+          <li><strong>Coord. Carrera y Rel. Laborales:</strong> concursos SINEP arts. 14–22, evaluación desempeño art. 37, reencasillamiento, pase a planta, paritarias STEYFP/ATE/UPCN, delegados</li>
+          <li><strong>Coord. Capacitación:</strong> plan anual capacitación, INAP, EGCC obligatorio, becas, clima laboral, programas de bienestar</li>
+          <li>992 puestos permanentes · 113.828 tareas/año (1 SAF)</li>
+        </ul>
+      </div>
+      <div class="ccomp">
+        <h4>Medicina, higiene y seguridad</h4>
+        <ul>
+          <li>Ratio 1:357 médico/agente (OIT recomendado)</li>
+          <li>53.447 tareas/año reales (1 SAF Producción)</li>
+          <li>13.487 justificaciones médicas/año solo en 1 SAF</li>
+          <li>Ley 19.587 / SRT: mapa de riesgos y ART obligatorio</li>
+        </ul>
+      </div>
+      <div class="ccomp">
+        <h4>DG Atención Local (3 Refs.)</h4>
+        <ul>
+          <li>1.804 consultas directas/año en Contratos (1 SAF)</li>
+          <li>Est. 8.000–10.000 interacciones/año en 3 SAF</li>
+          <li>9 efectivos/SAF: 4 atención + 3 soporte + 2 seguimiento</li>
+          <li>Modelo HR Shared Services: separación procesamiento/atención</li>
+        </ul>
+      </div>
+      <div class="ccomp">
+        <h4>Planificación y análisis</h4>
+        <ul>
+          <li><strong>Coord. Datos y Estadística:</strong> RIPRE, SIGI, estadísticas de planta, ausentismo, reportería SSMoDEP/OA/JGM, tablero de control People Analytics</li>
+          <li><strong>Coord. Planificación de Dotación:</strong> proyecciones de planta, análisis de brechas, cargos vacantes, proyectos normativos, decretos y resoluciones</li>
+          <li>210.129 registros dotación/año · SIDIF · GDE</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     PANEL 4 · BENCHMARKS
+═══════════════════════════════════════════════════════ -->
+<div id="p-benchmarks" class="panel">
+  <div class="card">
+    <div class="card-head"><h2>Benchmarks comparados — efectivos RRHH para 7.500 personas gestionadas</h2></div>
+    <div id="bm-chart"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11.5px"><div style="width:12px;height:12px;border-radius:2px;background:var(--teal)"></div>Referencia eficiente / propuesta</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11.5px"><div style="width:12px;height:12px;border-radius:2px;background:#4A90D9"></div>Sector privado LATAM/Global</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11.5px"><div style="width:12px;height:12px;border-radius:2px;background:#D4820A"></div>Sector público internacional</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11.5px"><div style="width:12px;height:12px;border-radius:2px;background:#B91C1C"></div>APN Argentina</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Tabla comparativa detallada</h2></div>
+    <table>
+      <thead><tr><th>Organización / referencia</th><th>Ratio RRHH</th><th>% HR/planta</th><th>Ef. equiv. (7.500 ag.)</th><th>Sector</th><th>Fuente</th></tr></thead>
+      <tbody id="tbl-bm-tbody"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>¿Por qué la APN necesita más efectivos que el privado?</h2></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div class="section-label">Factores que aumentan la carga APN</div>
+        <ul style="font-size:12.5px;color:var(--gris3);line-height:2;padding-left:16px">
+          <li>Sin autoservicio del empleado (ESS): 0% de autogestión</li>
+          <li>4 regímenes de contratación con lógicas distintas</li>
+          <li>Carga manual en 4–6 módulos de sistema por trámite</li>
+          <li>Control documental obligatorio: 6–8 documentos/acto</li>
+          <li>Obligaciones OA/EGCC/DJPI sin automatización</li>
+          <li>3 SAF con sistemas y CUIT distintos</li>
+          <li>Paritarias sectoriales + negociación gremial activa</li>
+        </ul>
+      </div>
+      <div>
+        <div class="section-label">Eficiencias capturadas en la propuesta</div>
+        <ul style="font-size:12.5px;color:var(--gris3);line-height:2;padding-left:16px">
+          <li>Eliminación de triplicación de estructuras (3→1 DGRRHH)</li>
+          <li>Economías de escala en liquidación (3 SAF → 2 Coords.)</li>
+          <li>DG Local filtra 20% de carga antes de llegar a DS técnicas</li>
+          <li>Consolidación de Carrera (antes rechazada/desistida) con masa crítica</li>
+          <li>Planificación unificada en un solo equipo de datos</li>
+          <li>Ratio objetivo: 1:40 (2,5% planta) vs. ratio actual 1:23 (×1,7 mejora)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     PANEL 5 · SIMULADOR
+═══════════════════════════════════════════════════════ -->
+<div id="p-sim" class="panel">
+  <div class="card">
+    <div class="card-head"><h2>Simulador de dotación · parámetros ajustables en tiempo real</h2></div>
+    <div class="info-bar">El modelo base usa las <strong>147.000 horas anuales reales</strong> del SAF Producción 2025 (12 áreas, 98 agentes). Ajustá los parámetros para ver el impacto en dotación necesaria y en la distribución por unidad.</div>
+    <div class="sim-layout">
+      <div>
+        <div class="section-label">Variables del universo</div>
+        <div class="sldr-row">
+          <label>Total agentes gestionados <strong id="sv-ag">7.500</strong></label>
+          <input type="range" min="2000" max="15000" step="250" value="7500" oninput="updateSim()" id="sl-ag">
+        </div>
+        <div class="sldr-row">
+          <label>SAF activos <strong id="sv-saf">3</strong></label>
+          <input type="range" min="1" max="5" step="1" value="3" oninput="updateSim()" id="sl-saf">
+        </div>
+        <div class="sldr-row">
+          <label>Horas efectivas por agente/año <strong id="sv-hs">1.760 hs</strong></label>
+          <input type="range" min="1320" max="2000" step="40" value="1760" oninput="updateSim()" id="sl-hs">
+        </div>
+        <div class="section-label" style="margin-top:16px">Eficiencias aplicables</div>
+        <div class="sldr-row">
+          <label>Ganancia por unificación 3→1 DG <strong id="sv-ef">55%</strong></label>
+          <input type="range" min="10" max="75" step="5" value="55" oninput="updateSim()" id="sl-ef">
+        </div>
+        <div class="sldr-row">
+          <label>Carga absorbida por DG Local <strong id="sv-loc">20%</strong></label>
+          <input type="range" min="5" max="45" step="5" value="20" oninput="updateSim()" id="sl-loc">
+        </div>
+        <div class="sldr-row">
+          <label>Digitalización / ESS (si se implementa) <strong id="sv-ess">0%</strong></label>
+          <input type="range" min="0" max="40" step="5" value="0" oninput="updateSim()" id="sl-ess">
+        </div>
+        <div class="sldr-row">
+          <label>Efectivos por Referencia SAF <strong id="sv-reff">9</strong></label>
+          <input type="range" min="5" max="15" step="1" value="9" oninput="updateSim()" id="sl-reff">
+        </div>
+      </div>
+
+      <div>
+        <div class="result-panel">
+          <h3>Dotación total propuesta</h3>
+          <div class="res-big" id="rv-total">108</div>
+          <div class="res-sub" id="rv-ratio">Base 324 ef. · Objetivo 1:40 · dotación sobre planta sustantiva</div>
+          <div class="res-rows">
+            <div class="res-row"><span>Horas brutas anuales (N SAF)</span><span id="rv-hb">420.000 hs</span></div>
+            <div class="res-row"><span>Ahorro por unificación (55%)</span><span id="rv-eu">231.000 hs</span></div>
+            <div class="res-row"><span>Delegado a DG Local (20%)</span><span id="rv-loc">37.800 hs</span></div>
+            <div class="res-row"><span>Ahorro digitalización/ESS</span><span id="rv-ess">0 hs</span></div>
+            <div class="res-row" style="border-top:1px solid rgba(255,255,255,.2);margin-top:4px;padding-top:8px"><span>Horas técnicas netas</span><strong><span id="rv-hn">151.200 hs</span></strong></div>
+            <div class="res-row"><span>DS técnicas (DG I + DG II)</span><span id="rv-ds">65 ef.</span></div>
+            <div class="res-row"><span>DG III Local (N SAF × ef. ref.)</span><span id="rv-locd">27 ef.</span></div>
+            <div class="res-row"><span>Dir. Medicina ★ (dep. SSRRhh)</span><span id="rv-med">21 ef.</span></div>
+            <div class="res-row"><span>Conducción 3 DG + admin.</span><span id="rv-cond">16 ef.</span></div>
+            <div class="res-row total"><span>TOTAL</span><span id="rv-grand">129 ef.</span></div>
+          </div>
+          <div class="bm-mini">
+            <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;opacity:.5;margin-bottom:8px">vs. benchmarks (ajustados a universo actual)</div>
+            <div class="bm-mini-row"><span>Ratio objetivo (1:40 · APN propuesto)</span><span id="rbm1" class="pill ok">—</span></div>
+            <div class="bm-mini-row"><span>Alta automatización privado (1:69)</span><span id="rbm2" class="pill ok">—</span></div>
+            <div class="bm-mini-row"><span>LATAM grandes empresas (1:83)</span><span id="rbm3" class="pill warn">—</span></div>
+            <div class="bm-mini-row"><span>OCDE sector público (1:53)</span><span id="rbm4" class="pill warn">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Distribución simulada por unidad organizativa</h2></div>
+    <table>
+      <thead><tr><th>Unidad</th><th>Efectivos simulados</th><th>% del total</th><th>Horas netas asignadas</th><th>Utilización estimada</th></tr></thead>
+      <tbody id="tbl-sim-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATOS REALES — planilla 2025 SAF Producción
+// ══════════════════════════════════════════
+const AREAS = [
+  { id:'contratos',   label:'Contratación del personal',           tramites:66314,  horasReal:15162, agAct:10, tprom:0.23, dotInd:8.61  },
+  { id:'cargos',      label:'Cargos y proyectos',                  tramites:10782,  horasReal:6660,  agAct:5,  tprom:0.62, dotInd:3.78  },
+  { id:'asistencia',  label:'Asistencias y presentismo',           tramites:111519, horasReal:12768, agAct:8,  tprom:0.11, dotInd:7.25  },
+  { id:'medicina',    label:'Medicina y seguridad en el trabajo',  tramites:53447,  horasReal:14357, agAct:9,  tprom:0.27, dotInd:8.16  },
+  { id:'carrera',     label:'Carrera, capacitación y ventanilla',  tramites:113828, horasReal:23972, agAct:16, tprom:0.21, dotInd:13.62 },
+  { id:'egresos',     label:'Egresos',                             tramites:21502,  horasReal:5867,  agAct:4,  tprom:0.27, dotInd:3.33  },
+  { id:'legajos',     label:'Legajos',                             tramites:95066,  horasReal:30249, agAct:20, tprom:0.32, dotInd:17.19 },
+  { id:'dotacion',    label:'Dotación y estadísticas',             tramites:210129, horasReal:6071,  agAct:4,  tprom:0.03, dotInd:3.45  },
+  { id:'liquidacion', label:'Liquidaciones de haberes',            tramites:16171,  horasReal:19204, agAct:12, tprom:1.19, dotInd:10.91 },
+  { id:'legales',     label:'Legales RRHH',                        tramites:8193,   horasReal:4491,  agAct:3,  tprom:0.55, dotInd:2.55  },
+  { id:'comunicacion',label:'Comunicaciones institucionales',       tramites:3476,   horasReal:6611,  agAct:5,  tprom:1.90, dotInd:3.76  },
+  { id:'soporte',     label:'Soporte general de expedientes (GDE)',tramites:9919,   horasReal:2679,  agAct:2,  tprom:0.27, dotInd:1.52  },
+];
+const FACTOR_3SAF = 1/0.35; // SAF Prod = 35% universo
+const HRS_EFECTIVAS = 1760;
+
+// Distribución propuesta por DS (% de dotación técnica central)
+const DIST_DS = [
+  { label:'Dir. Adm. de Personal',            pct:.29, saf:'todos' },
+  { label:'Dir. Liquidación de Haberes',       pct:.26, saf:'MECON+Prod+Infra' },
+  { label:'Dir. Carrera y Desarrollo',         pct:.30, saf:'todos' },
+  { label:'Dir. Planificación y Análisis',     pct:.09, saf:'transversal' },
+  { label:'Conducción 3 DG + admin. SSRRhh',  pct:.06, saf:'—' },
+];
+const MED_EF = 21; // Dir. Medicina dep. directa SSRRhh — fuera de DGs
+
+// Benchmarks
+const BMS = [
+  { label:'Ratio objetivo APN (1:40 — este modelo)',       ef:188, pct:2.08, color:'#0C2340', sector:'APN',      fuente:'Modelo propuesto SSRRhh 2025' },
+  { label:'Alta automatiz. privado (ESS completo)',         ef:69,  pct:0.93, color:'#1D9E75', sector:'Privado',  fuente:'Bersin/Deloitte 2023' },
+  { label:'Propuesta este documento (post-bajas)',    ef:169, pct:2.25, color:'#0C2340', sector:'APN',      fuente:'Análisis propio 2025' },
+  { label:'LATAM grandes empresas (Mercer 2023)',     ef:91,  pct:1.21, color:'#2B6CB0', sector:'Privado',  fuente:'Mercer Total Rem. Survey LATAM' },
+  { label:'Fortune 500 EEUU (SHRM 2023)',             ef:100, pct:1.33, color:'#3B82F6', sector:'Privado',  fuente:'SHRM HR Benchmarking 2023' },
+  { label:'Chile — Servicio Civil (SUBDERE 2022)',    ef:112, pct:1.49, color:'#D4820A', sector:'Público',  fuente:'DNSC Chile 2022' },
+  { label:'Uruguay — OPP (RRHH públicos 2021)',       ef:116, pct:1.55, color:'#B45309', sector:'Público',  fuente:'OPP Uruguay 2021' },
+  { label:'UK Civil Service (CIPD 2022)',             ef:121, pct:1.61, color:'#92400E', sector:'Público',  fuente:'CIPD Public Sector Benchmark' },
+  { label:'España — AGE (INAP España 2022)',          ef:137, pct:1.83, color:'#78350F', sector:'Público',  fuente:'INAP España informe gestión 2022' },
+  { label:'OCDE — promedio adm. centrales',           ef:141, pct:1.88, color:'#9A3412', sector:'Público',  fuente:'OCDE Government at a Glance 2023' },
+  { label:'Dotación actualizada (324 − 155 bajas)',     ef:169, pct:2.25, color:'#B91C1C', sector:'APN',      fuente:'PPT Análisis dotación MECON 2025' },
+  { label:'APN actual (3 DGRRHH separadas)',          ef:324, pct:4.32, color:'#7F1D1D', sector:'APN',      fuente:'Planilla 2025 consolidada' },
+];
+
+// ── build trámites panel ──
+function buildTramites(){
+  let totT=0,totH=0,totA=0,totI=0;
+  AREAS.forEach(a=>{totT+=a.tramites;totH+=a.horasReal;totA+=a.agAct;totI+=a.dotInd});
+
+  document.getElementById('met-tramites').innerHTML = [
+    {n:totT.toLocaleString('es-AR'),l:'Trámites/tareas anuales<br>(1 SAF · Producción)',c:''},
+    {n:Math.round(totH).toLocaleString('es-AR')+' hs',l:'Horas anuales carga real<br>(1 SAF)',c:''},
+    {n:totA,l:'Agentes operativos<br>documentados 2025',c:'a'},
+    {n:totI.toFixed(1),l:'Dotación indicativa<br>(modelo horas/HE)',c:'t'},
+    {n:(totH/HRS_EFECTIVAS*FACTOR_3SAF).toFixed(0)+' ef.',l:'Dotación bruta 3 SAF<br>(sin eficiencias)',c:'r'},
+    {n:'6,7 hs',l:'Hs/agente/día promedio<br>ponderado',c:''},
+  ].map(m=>`<div class="met"><div class="met-num ${m.c}">${m.n}</div><div class="met-lbl">${m.l}</div></div>`).join('');
+
+  const tb = document.getElementById('tbody-tramites');
+  tb.innerHTML='';
+  AREAS.forEach(a=>{
+    const brecha=(a.agAct-a.dotInd).toFixed(1);
+    const pcls = parseFloat(brecha)>1.5?'warn':parseFloat(brecha)<-0.5?'bad':'ok';
+    const util = Math.min(100,Math.round(a.dotInd/a.agAct*100));
+    tb.innerHTML+=`<tr>
+      <td>${a.label}</td>
+      <td style="text-align:center">${a.agAct}</td>
+      <td style="text-align:center">${a.tramites.toLocaleString('es-AR')}</td>
+      <td style="text-align:center">${Math.round(a.horasReal).toLocaleString('es-AR')} hs</td>
+      <td style="text-align:center">${a.tprom.toFixed(2)} hs</td>
+      <td style="text-align:center"><strong>${a.dotInd.toFixed(1)}</strong></td>
+      <td style="text-align:center">${a.agAct}</td>
+      <td style="text-align:center"><span class="pill ${pcls}">${brecha>0?'+':''}${brecha}</span></td>
+      <td style="text-align:center">${Math.round(a.tramites/a.agAct).toLocaleString('es-AR')}</td>
+    </tr>`;
+  });
+  tb.innerHTML+=`<tr class="total-row">
+    <td>TOTAL (1 SAF · Producción)</td>
+    <td style="text-align:center">${totA}</td>
+    <td style="text-align:center">${totT.toLocaleString('es-AR')}</td>
+    <td style="text-align:center">${Math.round(totH).toLocaleString('es-AR')} hs</td>
+    <td style="text-align:center">${(totH/totT).toFixed(2)} hs</td>
+    <td style="text-align:center">${totI.toFixed(1)}</td>
+    <td style="text-align:center">${totA}</td>
+    <td style="text-align:center"><span class="pill warn">+${(totA-totI).toFixed(1)}</span></td>
+    <td></td>
+  </tr>`;
+}
+
+// ── build dotación panel ──
+function buildDotacion(){
+  const unidades = [
+    { u:'Dir. Adm. de Personal (legajos+contrat.+design.)', saf:'Todos', tramites3:Math.round((66314+95066+10782)*FACTOR_3SAF), horas3:Math.round((15162+30249+6660)*FACTOR_3SAF*0.45), prop:20, crit:'Coord. Gestión de Personal + Coord. Contratación · 307 ag./legajista', util:92 },
+    { u:'Dir. Liquidación de Haberes', saf:'Todos', tramites3:Math.round(16171*FACTOR_3SAF), horas3:Math.round(19204*FACTOR_3SAF*0.45), prop:22, crit:'Coord. Impositiva + Coord. Comp. y Beneficios · 417 ag./liquidador', util:85 },
+    { u:'Dir. Carrera y Desarrollo', saf:'Todos', tramites3:Math.round(113828*FACTOR_3SAF), horas3:Math.round(23972*FACTOR_3SAF*0.45), prop:21, crit:'Coord. Carrera y Rel. Lab. + Coord. Capacitación · 992 PP', util:78 },
+    { u:'Dir. Planificación y Análisis', saf:'Transversal', tramites3:Math.round(210129*FACTOR_3SAF), horas3:Math.round(6071*FACTOR_3SAF*0.45), prop:6, crit:'Coord. Datos y Estadística + Coord. Planif. de Dotación · RIPRE/SIGI', util:60 },
+    { u:'DG Local — Coord. Asuntos Económicos (SAF 362)', saf:'MECON', tramites3:'~3.200', horas3:'-', prop:9, crit:'Ventanilla única · 2.475 ag. · 4+3+2 ef.', util:100 },
+    { u:'DG Local — Coord. Producción (SAF 363)', saf:'Producción', tramites3:'~3.500', horas3:'-', prop:9, crit:'Ventanilla única · 2.625 ag. · 4+3+2 ef.', util:100 },
+    { u:'DG Local — Coord. Infraestructura (SAF 364)', saf:'Infra.', tramites3:'~3.100', horas3:'-', prop:9, crit:'Ventanilla única · 2.400 ag. · 4+3+2 ef.', util:100 },
+    { u:'Dir. Medicina, Hig. y Seg. ★ dep. directa SSRRhh', saf:'Todos', tramites3:Math.round(53447*FACTOR_3SAF), horas3:Math.round(14357*FACTOR_3SAF*0.45), prop:21, crit:'1:357 ratio OIT · Ley 19.587 · dep. SSRRhh', util:95 },
+    { u:'Conducción 3 DG + soporte admin. SSRRhh', saf:'—', tramites3:'—', horas3:'-', prop:16, crit:'Conducción, asesoría legal, soporte GDE', util:70 },
+  ];
+
+  document.getElementById('met-dot').innerHTML=[
+    {n:'324',l:'Dotación actual 3 SAF',c:'r'},
+    {n:'155',l:'Bajas propuestas',c:'a'},
+    {n:'169',l:'Dotación actualizada (324 − 155)',c:'t'},
+    {n:'1:44',l:'Ratio resultante (7.500 ÷ 169)',c:''},
+    {n:'2,3%',l:'% sobre planta sustantiva',c:''},
+    {n:'−48%',l:'Reducción vs. dotación actual',c:'t'},
+  ].map(m=>`<div class="met"><div class="met-num ${m.c}">${m.n}</div><div class="met-lbl">${m.l}</div></div>`).join('');
+
+  const tb=document.getElementById('tbody-dot');
+  tb.innerHTML='';
+  let tot=0;
+  unidades.forEach(u=>{
+    tot+=u.prop;
+    const safTag = u.saf==='Todos'?`<span class="tag all">Todos los SAF</span>`:
+      u.saf==='MECON'?`<span class="tag eco">MECON</span>`:
+      u.saf==='Producción'?`<span class="tag prod">Producción</span>`:
+      u.saf==='Infra.'?`<span class="tag infra">Infra.</span>`:
+      `<span class="tag all">${u.saf}</span>`;
+    const barPct=u.util;
+    const barCls=barPct>85?'':barPct>65?'a':'r';
+    tb.innerHTML+=`<tr>
+      <td>${u.u}</td>
+      <td>${safTag}</td>
+      <td style="text-align:center">${typeof u.tramites3==='number'?u.tramites3.toLocaleString('es-AR'):u.tramites3}</td>
+      <td style="text-align:center">${typeof u.horas3==='number'?u.horas3.toLocaleString('es-AR')+' hs':u.horas3}</td>
+      <td style="text-align:center">${typeof u.horas3==='number'?Math.ceil(u.horas3/HRS_EFECTIVAS).toFixed(1):'—'}</td>
+      <td style="text-align:center"><strong>${u.prop}</strong></td>
+      <td style="font-size:11.5px;color:var(--gris3)">${u.crit}</td>
+      <td style="min-width:90px"><div class="bar-w"><div class="bar-f ${barCls}" style="width:${barPct}%"></div></div></td>
+    </tr>`;
+  });
+  tb.innerHTML+=`<tr class="total-row"><td>TOTAL propuesto</td><td></td><td></td><td></td><td></td><td>${tot}</td><td></td><td></td></tr>`;
+  tb.innerHTML+=`<tr style="background:#EBF4FF"><td colspan="5" style="font-size:11.5px;color:#1a3a6b;padding:7px 11px"><strong>Dotación actualizada:</strong> 324 actuales − 155 bajas propuestas = <strong>169 efectivos</strong> resultantes · ratio 1:44 (7.500 ÷ 169)</td><td colspan="3"></td></tr>`;
+}
+
+// ── build benchmarks ──
+function buildBenchmarks(){
+  const maxEf=350;
+  document.getElementById('bm-chart').innerHTML=BMS.map(b=>`
+    <div class="bm-row">
+      <div class="bm-lbl">${b.label}</div>
+      <div class="bm-bar-wrap">
+        <div class="bm-bar" style="width:${Math.min(b.ef/maxEf*100,100)}%;background:${b.color}">${b.ef} ef.</div>
+      </div>
+      <div class="bm-val">${(b.pct).toFixed(1)}%</div>
+    </div>`).join('');
+
+  const tb=document.getElementById('tbl-bm-tbody');
+  tb.innerHTML='';
+  BMS.forEach(b=>{
+    const ratio=Math.round(7500/b.ef);
+    const cls=b.sector==='APN'?'bad':b.sector==='Privado'?'ok':'warn';
+    tb.innerHTML+=`<tr>
+      <td>${b.label}</td>
+      <td style="text-align:center">1 : ${ratio}</td>
+      <td style="text-align:center">${b.pct.toFixed(1)}%</td>
+      <td style="text-align:center"><strong>${b.ef}</strong></td>
+      <td><span class="pill ${cls}">${b.sector}</span></td>
+      <td style="font-size:11.5px;color:var(--gris3)">${b.fuente}</td>
+    </tr>`;
+  });
+}
+
+// ── simulador ──
+const BASE_HRS_1SAF = 147391; // suma real horas 1 SAF Producción
+
+function updateSim(){
+  const ag   = +document.getElementById('sl-ag').value;
+  const safs = +document.getElementById('sl-saf').value;
+  const hsEf = +document.getElementById('sl-hs').value;
+  const efPct= +document.getElementById('sl-ef').value/100;
+  const locPct=+document.getElementById('sl-loc').value/100;
+  const essPct=+document.getElementById('sl-ess').value/100;
+  const reff = +document.getElementById('sl-reff').value;
+
+  document.getElementById('sv-ag').textContent = ag.toLocaleString('es-AR');
+  document.getElementById('sv-saf').textContent= safs;
+  document.getElementById('sv-hs').textContent = hsEf.toLocaleString('es-AR')+' hs';
+  document.getElementById('sv-ef').textContent = Math.round(efPct*100)+'%';
+  document.getElementById('sv-loc').textContent= Math.round(locPct*100)+'%';
+  document.getElementById('sv-ess').textContent= Math.round(essPct*100)+'%';
+  document.getElementById('sv-reff').textContent=reff;
+
+  const factorAg = ag / 7500;
+  const BASE_DOT_7500 = 324;  // dotación actual real
+  const BASE_POST_BAJAS = 169; // dotación actualizada (324 − 155 bajas)
+  const hb  = BASE_HRS_1SAF * factorAg * safs;
+  const dotBase = Math.round(BASE_DOT_7500 * factorAg);
+  const eu  = hb * efPct;
+  const hl  = (hb - eu) * locPct;
+  const hess= (hb - eu) * essPct;
+  const hn  = hb - eu - hl - hess;
+  const dsCent = Math.ceil(hn / hsEf);
+  const dsLoc  = safs * reff;
+  const cond   = 16;
+  const med    = MED_EF;
+  // La dotación propuesta base es 169; el simulador la escala por agentes y ajusta por parámetros
+  const totCalc = dsCent + dsLoc + cond + med;
+  const totBase169 = Math.round(BASE_POST_BAJAS * factorAg);
+  // Usamos el mayor entre la dotación base escalada (169) y la calculada por horas
+  const tot = Math.max(totBase169, totCalc);
+  const ratio  = Math.round(ag / tot);
+
+  const f = n => Math.round(n).toLocaleString('es-AR');
+
+  const RATIO_OBJETIVO = 40;
+  const dotObjetivo = Math.round(ag / RATIO_OBJETIVO);
+  document.getElementById('rv-total').textContent = tot;
+  document.getElementById('rv-ratio').textContent = `Base: ${dotBase} ef. · Objetivo 1:${RATIO_OBJETIVO} → ${dotObjetivo} ef.`;
+  document.getElementById('rv-hb').textContent    = f(hb)+' hs';
+  document.getElementById('rv-eu').textContent    = f(eu)+' hs';
+  document.getElementById('rv-loc').textContent   = f(hl)+' hs';
+  document.getElementById('rv-ess').textContent   = f(hess)+' hs';
+  document.getElementById('rv-hn').textContent    = f(hn)+' hs';
+  document.getElementById('rv-ds').textContent    = dsCent+' ef.';
+  document.getElementById('rv-locd').textContent  = dsLoc+' ef. ('+safs+'×'+reff+')';
+  document.getElementById('rv-med').textContent   = med+' ef.';
+  document.getElementById('rv-cond').textContent  = cond+' ef.';
+  document.getElementById('rv-grand').textContent = tot+' ef.';
+
+  // Benchmarks ajustados al universo actual
+  const bm1=Math.round(ag/40); const bm2=Math.round(ag/69); const bm3=Math.round(ag/83); const bm4=Math.round(ag/53);
+  const mkPill=(ref,tot)=>{ const cls=tot<=ref*1.1?'ok':tot<=ref*1.3?'warn':'bad'; return `<span class="pill ${cls}">${ref} ef.</span>`; };
+  document.getElementById('rbm1').outerHTML=`<span id="rbm1">${mkPill(bm1,tot)}</span>`;
+  document.getElementById('rbm2').outerHTML=`<span id="rbm2">${mkPill(bm2,tot)}</span>`;
+  document.getElementById('rbm3').outerHTML=`<span id="rbm3">${mkPill(bm3,tot)}</span>`;
+  document.getElementById('rbm4').outerHTML=`<span id="rbm4">${mkPill(bm4,tot)}</span>`;
+
+  // Tabla distribución
+  const tb=document.getElementById('tbl-sim-body');
+  tb.innerHTML='';
+  const rows=[
+    ...DIST_DS.filter(d=>d.label!=='Conducción 3 DG + admin. SSRRhh').map(d=>({ label:d.label, ef:Math.ceil(dsCent*d.pct), src:'central' })),
+    ...Array.from({length:safs},(_,i)=>({ label:['DG Local — Coord. As. Económicos (SAF 362)','DG Local — Coord. Producción (SAF 363)','DG Local — Coord. Infraestructura (SAF 364)','DG Local — Coord. SAF 4','DG Local — Coord. SAF 5'][i], ef:reff, src:'local' })),
+    { label:'Dir. Medicina, Hig. y Seg. ★ dep. SSRRhh', ef:MED_EF, src:'med' },
+    { label:'Conducción 3 DG + soporte admin.', ef:cond, src:'cond' }
+  ];
+  rows.forEach(r=>{
+    const util=Math.min(100,Math.round(r.ef/tot*100*3.5));
+    const barCls=util>80?'':util>60?'a':'r';
+    tb.innerHTML+=`<tr>
+      <td>${r.label} <span class="pill ${r.src==='local'?'blu':r.src==='cond'?'neu':'ok'}" style="font-size:10px">${r.src==='local'?'DG Local':r.src==='cond'?'Cond.':'DS Central'}</span></td>
+      <td style="text-align:center"><strong>${r.ef}</strong></td>
+      <td style="text-align:center">${(r.ef/tot*100).toFixed(1)}%</td>
+      <td style="text-align:center">${r.src==='local'||r.src==='cond'?'—':Math.round(hn*(DIST_DS.find(d=>d.label===r.label)||{pct:0}).pct).toLocaleString('es-AR')+' hs'}</td>
+      <td style="min-width:90px"><div class="bar-w"><div class="bar-f ${barCls}" style="width:${r.ef/tot*100}%"></div></div></td>
+    </tr>`;
+  });
+  tb.innerHTML+=`<tr class="total-row"><td>TOTAL</td><td style="text-align:center">${tot}</td><td style="text-align:center">100%</td><td></td><td></td></tr>`;
+}
+
+// ── navigation ──
+function go(id, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('p-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+
+// ══════════════════════════════════════════════════════════
+// SGA — MOTOR DEL ORGANIGRAMA INTERACTIVO
+// ══════════════════════════════════════════════════════════
+
+const SGA_COLORS = {
+  ssec:  { bg:'#0C2340', border:'#0C2340', text:'white' },
+  dg:    { bg:'#183D6B', border:'#2B6CB0', text:'white' },
+  ds:    { bg:'#EBF4FF', border:'#2B6CB0', text:'#1A3A6B' },
+  coord: { bg:'white',   border:'#D4D8E2', text:'#4A5568', dash:true },
+};
+
+const SGA_DEFAULT = [
+  { id:'ssga', parentId:null,   tipo:'ssec',  nombre:'Subsecretaría de Gestión Administrativa', titular:'', locked:true },
+  { id:'dgrrhh', parentId:'ssga', tipo:'dg', nombre:'DG de Recursos Humanos', titular:'', locked:true },
+  { id:'dgtic',  parentId:'ssga', tipo:'dg', nombre:'DG de Tecnologías de la Información y las Comunicaciones', titular:'', locked:true },
+  { id:'dgadm',  parentId:'ssga', tipo:'dg', nombre:'DG de Administración', titular:'', locked:true },
+  { id:'dgpps',  parentId:'ssga', tipo:'dg', nombre:'DG de Programas y Proyectos Sectoriales y Especiales', titular:'', locked:false },
+  // Bajo DG RRHH
+  { id:'dadprrhh', parentId:'dgrrhh', tipo:'ds', nombre:'Dir. de Administración y Desarrollo de RRHH', titular:'', locked:false },
+  { id:'dliqhab',  parentId:'dgrrhh', tipo:'ds', nombre:'Dir. de Liquidación de Haberes', titular:'', locked:false },
+  { id:'cmedseg',  parentId:'dgrrhh', tipo:'coord', nombre:'Coord. de Medicina y Seguridad Laboral', titular:'', locked:false },
+  { id:'ccontrat', parentId:'dadprrhh', tipo:'coord', nombre:'Coord. de Contratación de Personal', titular:'', locked:false },
+  { id:'ccarrera', parentId:'dadprrhh', tipo:'coord', nombre:'Coord. de Desarrollo de Carrera', titular:'', locked:false },
+  // Bajo DG TIC
+  { id:'cinfra',   parentId:'dgtic', tipo:'coord', nombre:'Coord. de Infraestructura, Seguridad y Soporte Informático', titular:'', locked:false },
+  { id:'cdesarr',  parentId:'dgtic', tipo:'coord', nombre:'Coord. de Desarrollo de Sistemas', titular:'', locked:false },
+  // Bajo DG Administración
+  { id:'dcps',  parentId:'dgadm', tipo:'ds', nombre:'Dir. de Compras, Patrimonio y Suministros', titular:'', locked:false },
+  { id:'dppcf', parentId:'dgadm', tipo:'ds', nombre:'Dir. de Presupuesto, Contabilidad y Finanzas', titular:'', locked:false },
+  { id:'cservgen',  parentId:'dgadm', tipo:'coord', nombre:'Coord. de Servicios Generales', titular:'', locked:false },
+  { id:'cgpmod',    parentId:'dgadm', tipo:'coord', nombre:'Coord. de Gestión, Planeamiento y Monitoreo de Organismos Descentralizados', titular:'', locked:false },
+  { id:'cprogpres', parentId:'dppcf', tipo:'coord', nombre:'Coord. de Programación Presupuestaria', titular:'', locked:false },
+  { id:'ctesoreria',parentId:'dppcf', tipo:'coord', nombre:'Coord. de Tesorería', titular:'', locked:false },
+];
+
+let sgaData = JSON.parse(JSON.stringify(SGA_DEFAULT));
+let selectedId = null;
+
+function getSGANode(id){ return sgaData.find(n=>n.id===id); }
+function getSGAChildren(id){ return sgaData.filter(n=>n.parentId===id); }
+function getSGADepth(id){
+  let d=0, n=getSGANode(id);
+  while(n && n.parentId){ n=getSGANode(n.parentId); d++; }
+  return d;
+}
+
+function renderSGA(){
+  const wrap = document.getElementById('sga-org');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  const root = sgaData.find(n=>n.parentId===null);
+  if(!root) return;
+  // Use SVG-based hierarchical layout
+  const svg = buildSGASVG();
+  wrap.appendChild(svg);
+  buildSGAList();
+  buildSGADashboard();
+  if(typeof buildComparativo==="function") buildComparativo();
+}
+
+// ── Layout engine ──
+const BOX_W  = { ssec:240, dg:180, ds:152, coord:148 };
+const BOX_H  = { ssec:54,  dg:50,  ds:46,  coord:44  };
+const GAP_X  = 18;  // horizontal gap between siblings
+const GAP_Y  = 52;  // vertical gap between levels
+
+function subtreeWidth(id){
+  const node = getSGANode(id);
+  const children = getSGAChildren(id);
+  if(!children.length) return BOX_W[node.tipo] + GAP_X;
+  const childTotal = children.reduce((s,ch)=>s+subtreeWidth(ch.id), 0);
+  return Math.max(BOX_W[node.tipo] + GAP_X, childTotal);
+}
+
+function assignPositions(id, x, y, positions){
+  const node = getSGANode(id);
+  const children = getSGAChildren(id);
+  const sw = subtreeWidth(id);
+  const cx = x + sw/2;
+  positions[id] = { x: cx - BOX_W[node.tipo]/2, y, cx, cy: y + BOX_H[node.tipo]/2, w: BOX_W[node.tipo], h: BOX_H[node.tipo] };
+  if(children.length){
+    let childX = x;
+    children.forEach(ch=>{
+      assignPositions(ch.id, childX, y + BOX_H[node.tipo] + GAP_Y, positions);
+      childX += subtreeWidth(ch.id);
+    });
+  }
+}
+
+function buildSGASVG(){
+  const root = sgaData.find(n=>n.parentId===null);
+  const positions = {};
+  assignPositions(root.id, GAP_X/2, 20, positions);
+
+  // Compute SVG size
+  let maxX=0, maxY=0;
+  Object.values(positions).forEach(p=>{ maxX=Math.max(maxX,p.x+p.w+GAP_X); maxY=Math.max(maxY,p.y+p.h+20); });
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS,'svg');
+  svg.setAttribute('width', maxX);
+  svg.setAttribute('height', maxY);
+  svg.style.cssText = 'display:block;font-family:Segoe UI,system-ui,sans-serif;overflow:visible';
+
+  // Colors
+  const COL = {
+    ssec:  { fill:'#0C2340', stroke:'#0C2340', text:'white',   badge:'rgba(255,255,255,.45)' },
+    dg:    { fill:'#183D6B', stroke:'#2B6CB0', text:'white',   badge:'rgba(255,255,255,.4)'  },
+    ds:    { fill:'#EBF4FF', stroke:'#2B6CB0', text:'#1A3A6B', badge:'rgba(43,108,176,.25)'  },
+    coord: { fill:'#F8F9FB', stroke:'#D4D8E2', text:'#4A5568', badge:'rgba(0,0,0,.12)', dash:true },
+  };
+  const SEL = { fill:'#1D9E75', stroke:'#1D9E75', text:'white', badge:'rgba(255,255,255,.4)' };
+
+  // Draw connectors first (behind boxes)
+  const gLines = document.createElementNS(NS,'g');
+  sgaData.forEach(node=>{
+    if(!node.parentId) return;
+    const p = positions[node.parentId];
+    const ch = positions[node.id];
+    if(!p||!ch) return;
+    const midY = p.y + p.h + GAP_Y/2;
+    // Elbow connector
+    const path = document.createElementNS(NS,'path');
+    path.setAttribute('d',`M${p.cx},${p.y+p.h} L${p.cx},${midY} L${ch.cx},${midY} L${ch.cx},${ch.y}`);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','#C0C8D8');
+    path.setAttribute('stroke-width','1.5');
+    gLines.appendChild(path);
+  });
+  svg.appendChild(gLines);
+
+  // Draw boxes
+  sgaData.forEach(node=>{
+    const pos = positions[node.id];
+    if(!pos) return;
+    const col = node.id===selectedId ? SEL : (COL[node.tipo]||COL.coord);
+    const tipoLabel = {ssec:'Subsecretaría',dg:'Dir. General',ds:'Dir. Simple',coord:'Coordinación'}[node.tipo]||node.tipo;
+
+    const g = document.createElementNS(NS,'g');
+    g.style.cursor = 'pointer';
+
+    // Shadow rect
+    const shadow = document.createElementNS(NS,'rect');
+    shadow.setAttribute('x', pos.x+2); shadow.setAttribute('y', pos.y+2);
+    shadow.setAttribute('width', pos.w); shadow.setAttribute('height', pos.h);
+    shadow.setAttribute('rx','8'); shadow.setAttribute('fill','rgba(0,0,0,.07)');
+    g.appendChild(shadow);
+
+    // Main rect
+    const rect = document.createElementNS(NS,'rect');
+    rect.setAttribute('x', pos.x); rect.setAttribute('y', pos.y);
+    rect.setAttribute('width', pos.w); rect.setAttribute('height', pos.h);
+    rect.setAttribute('rx','8');
+    rect.setAttribute('fill', col.fill);
+    rect.setAttribute('stroke', col.stroke);
+    rect.setAttribute('stroke-width', node.id===selectedId?'2.5':'1.5');
+    if(COL[node.tipo]&&COL[node.tipo].dash) rect.setAttribute('stroke-dasharray','5,3');
+    g.appendChild(rect);
+
+    // Selection ring
+    if(node.id===selectedId){
+      const ring = document.createElementNS(NS,'rect');
+      ring.setAttribute('x',pos.x-3); ring.setAttribute('y',pos.y-3);
+      ring.setAttribute('width',pos.w+6); ring.setAttribute('height',pos.h+6);
+      ring.setAttribute('rx','11'); ring.setAttribute('fill','none');
+      ring.setAttribute('stroke','#1D9E75'); ring.setAttribute('stroke-width','2');
+      ring.setAttribute('stroke-dasharray','4,3'); ring.setAttribute('opacity','.7');
+      g.appendChild(ring);
+    }
+
+    // Tipo badge background (left stripe)
+    const stripe = document.createElementNS(NS,'rect');
+    const stripeW = 6;
+    stripe.setAttribute('x',pos.x); stripe.setAttribute('y',pos.y);
+    stripe.setAttribute('width',stripeW); stripe.setAttribute('height',pos.h);
+    stripe.setAttribute('rx','8'); stripe.setAttribute('fill', col.badge);
+    g.appendChild(stripe);
+
+    // Label text (wrap)
+    const words = node.nombre.split(' ');
+    const lineH = 13;
+    const maxCharsPerLine = node.tipo==='coord' ? 22 : 20;
+    const lines = [];
+    let cur = '';
+    words.forEach(w=>{ if((cur+' '+w).trim().length>maxCharsPerLine && cur){ lines.push(cur.trim()); cur=w; } else cur+=' '+w; });
+    if(cur.trim()) lines.push(cur.trim());
+    const totalTextH = lines.length * lineH;
+    const textStartY = pos.y + (pos.h - totalTextH)/2 + lineH*0.75;
+    const fontSize = node.tipo==='ssec'?12.5:node.tipo==='coord'?10.5:11.5;
+
+    lines.forEach((line,i)=>{
+      const t = document.createElementNS(NS,'text');
+      t.setAttribute('x', pos.x + stripeW + (pos.w-stripeW)/2);
+      t.setAttribute('y', textStartY + i*lineH);
+      t.setAttribute('text-anchor','middle');
+      t.setAttribute('font-size', fontSize);
+      t.setAttribute('font-weight','700');
+      t.setAttribute('fill', col.text);
+      t.setAttribute('font-family','Segoe UI,system-ui,sans-serif');
+      t.textContent = line;
+      g.appendChild(t);
+    });
+
+    // Tipo label bottom
+    const tipoT = document.createElementNS(NS,'text');
+    tipoT.setAttribute('x', pos.x + pos.w/2);
+    tipoT.setAttribute('y', pos.y + pos.h - 5);
+    tipoT.setAttribute('text-anchor','middle');
+    tipoT.setAttribute('font-size','8.5');
+    tipoT.setAttribute('font-weight','600');
+    tipoT.setAttribute('letter-spacing','0.04em');
+    tipoT.setAttribute('fill', col.text);
+    tipoT.setAttribute('opacity','.55');
+    tipoT.setAttribute('font-family','Segoe UI,system-ui,sans-serif');
+    tipoT.textContent = (node.locked?'🔒 ':'') + tipoLabel.toUpperCase();
+    g.appendChild(tipoT);
+
+    g.onclick = ()=>selectSGANode(node.id);
+    svg.appendChild(g);
+  });
+
+  return svg;
+}
+
+function selectSGANode(id){
+  selectedId = id;
+  renderSGA();
+  const node = getSGANode(id);
+  const editor = document.getElementById('sga-editor');
+  editor.style.display = 'block';
+  document.getElementById('sga-edit-title').textContent = '✏️ Unidad seleccionada: ' + node.nombre;
+  document.getElementById('sga-del-info').textContent = node.locked
+    ? '🔒 Esta unidad no puede eliminarse.'
+    : 'Se eliminará esta unidad y todas sus dependientes.';
+  const delBtn = document.getElementById('sga-del-btn');
+  delBtn.style.display = node.locked ? 'none' : 'block';
+  // Scroll editor into view
+  editor.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function closeEditor(){
+  selectedId = null;
+  document.getElementById('sga-editor').style.display = 'none';
+  renderSGA();
+}
+
+function addUnit(){
+  const tipo = document.getElementById('new-tipo').value;
+  const nombre = document.getElementById('new-nombre').value.trim();
+  const titular = document.getElementById('new-titular').value.trim();
+  if(!nombre){ alert('Ingresá el nombre de la unidad.'); return; }
+  if(!selectedId){ alert('Seleccioná primero la unidad padre en el organigrama.'); return; }
+  const newId = 'u_' + Date.now();
+  sgaData.push({ id:newId, parentId:selectedId, tipo, nombre, titular, locked:false });
+  document.getElementById('new-nombre').value = '';
+  document.getElementById('new-titular').value = '';
+  renderSGA();
+}
+
+function deleteUnit(){
+  if(!selectedId) return;
+  const node = getSGANode(selectedId);
+  if(node.locked){ alert('Esta unidad no puede eliminarse.'); return; }
+  // Recursive delete
+  function deleteRec(id){
+    getSGAChildren(id).forEach(ch=>deleteRec(ch.id));
+    sgaData = sgaData.filter(n=>n.id!==id);
+  }
+  const name = node.nombre;
+  if(confirm('¿Eliminar "' + name + '" y todas sus subunidades?')){
+    deleteRec(selectedId);
+    selectedId = null;
+    document.getElementById('sga-editor').style.display = 'none';
+    renderSGA();
+  }
+}
+
+function buildSGAList(){
+  const tb = document.getElementById('sga-list-body');
+  if(!tb) return;
+  tb.innerHTML = '';
+  const tipoLabel = {ssec:'Subsecretaría',dg:'Dir. General',ds:'Dir. Simple',coord:'Coordinación'};
+  const tipoPill = {ssec:'blu',dg:'ok',ds:'neu',coord:'neu'};
+  sgaData.forEach(n=>{
+    const parent = n.parentId ? getSGANode(n.parentId) : null;
+    const indent = getSGADepth(n.id);
+    tb.innerHTML += `<tr>
+      <td style="padding-left:${8+indent*14}px">${n.locked?'🔒 ':''}${n.nombre}</td>
+      <td><span class="pill ${tipoPill[n.tipo]||'neu'}">${tipoLabel[n.tipo]||n.tipo}</span></td>
+      <td style="font-size:12px;color:var(--gris3)">${parent?parent.nombre:'—'}</td>
+      <td style="font-size:12px;color:var(--gris3)">${n.titular||'—'}</td>
+      <td>${n.locked?'<span style="font-size:11px;color:var(--gris3)">No editable</span>':`<button onclick="selectSGANode('${n.id}')" style="padding:3px 10px;background:var(--azul-s);color:var(--azul-c);border:1px solid var(--azul-c);border-radius:5px;font-size:11px;cursor:pointer">Seleccionar</button>`}</td>
+    </tr>`;
+  });
+}
+
+function exportSGA(){
+  const json = JSON.stringify(sgaData, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'estructura_sga_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function resetSGA(){
+  if(confirm('¿Restablecer la estructura al estado inicial?')){
+    sgaData = JSON.parse(JSON.stringify(SGA_DEFAULT));
+    selectedId = null;
+    document.getElementById('sga-editor').style.display = 'none';
+    renderSGA();
+  }
+}
+
+
+// ── Tablero de cargos ──
+function buildSGADashboard(){
+  const total   = sgaData.length;
+  const subsecs = sgaData.filter(n=>n.tipo==='ssec').length;
+  const dgs     = sgaData.filter(n=>n.tipo==='dg').length;
+  const dss     = sgaData.filter(n=>n.tipo==='ds').length;
+  const coords  = sgaData.filter(n=>n.tipo==='coord').length;
+
+  const mEl = document.getElementById('sga-dash-metrics');
+  const dEl = document.getElementById('sga-dash-detail');
+  const uEl = document.getElementById('sga-dash-updated');
+  if(!mEl||!dEl) return;
+
+  const now = new Date();
+  if(uEl) uEl.textContent = 'Actualizado: ' + now.toLocaleDateString('es-AR') + ' · ' + now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+
+  mEl.innerHTML = [
+    { n: total,  l: 'Total de unidades<br>organizativas',         c:'t'  },
+    { n: dgs,    l: 'Direcciones Generales<br>(A I)',              c:''   },
+    { n: dss,    l: 'Direcciones Simples<br>(B III)',              c:''   },
+    { n: coords, l: 'Coordinaciones<br>(B IV)',                    c:''   },
+    { n: dgs+dss+coords, l: 'Cargos con conducción<br>(A I + B III + B IV)', c:'a' },
+    { n: subsecs,l: 'Subsecretarías<br>',                          c:''   },
+  ].map(m=>`<div class="met"><div class="met-num ${m.c}">${m.n}</div><div class="met-lbl">${m.l}</div></div>`).join('');
+
+  // Detail by DG
+  const rootDGs = sgaData.filter(n=>n.tipo==='dg');
+  dEl.innerHTML = '';
+  rootDGs.forEach(dg=>{
+    const dsUnder    = countDescendants(dg.id, 'ds');
+    const coordUnder = countDescendants(dg.id, 'coord');
+    const total      = 1 + dsUnder + coordUnder;
+    dEl.innerHTML += `
+      <div style="border:1px solid var(--gris2);border-radius:8px;padding:13px 15px;background:white">
+        <div style="font-size:12px;font-weight:700;color:var(--azul);margin-bottom:8px;line-height:1.3">${dg.nombre}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="pill ok" style="font-size:11px">${total} unidades</span>
+          ${dsUnder?`<span class="pill neu">${dsUnder} Dir. Simple${dsUnder>1?'s':''}</span>`:''}
+          ${coordUnder?`<span class="pill blu">${coordUnder} Coord.`+`</span>`:''}
+        </div>
+        ${buildMiniTree(dg.id)}
+      </div>`;
+  });
+
+  // Direct dependents of SSgA (non-DG)
+  const directDS = sgaData.filter(n=>n.parentId==='ssga' && n.tipo!=='dg' && n.tipo!=='ssec');
+  if(directDS.length){
+    dEl.innerHTML += `
+      <div style="border:1px solid var(--ambar);border-radius:8px;padding:13px 15px;background:var(--ambar-s)">
+        <div style="font-size:12px;font-weight:700;color:#7a4a00;margin-bottom:8px">Dep. directas de la Subsecretaría</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="pill warn">${directDS.length} unidad${directDS.length>1?'es':''}</span>
+        </div>
+        ${directDS.map(n=>`<div style="font-size:11.5px;color:#7a4a00;padding:3px 0;border-bottom:1px solid rgba(192,122,0,.2)">${n.nombre}</div>`).join('')}
+      </div>`;
+  }
+}
+
+function countDescendants(id, tipo){
+  let count = 0;
+  getSGAChildren(id).forEach(ch=>{
+    if(!tipo || ch.tipo===tipo) count++;
+    count += countDescendants(ch.id, tipo);
+  });
+  return count;
+}
+
+function buildMiniTree(id){
+  const children = getSGAChildren(id);
+  if(!children.length) return '';
+  return `<div style="margin-top:8px;border-top:1px solid var(--gris1);padding-top:8px">` +
+    children.map(ch=>{
+      const sub = getSGAChildren(ch.id);
+      const tipoColor = ch.tipo==='ds'?'#2B6CB0':'#4A5568';
+      const tipoBg = ch.tipo==='ds'?'var(--azul-s)':'var(--gris1)';
+      return `<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px">
+        <div style="width:12px;height:12px;flex-shrink:0;background:${tipoBg};border:1px solid ${tipoColor};border-radius:3px;margin-top:1px"></div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--gris8);line-height:1.3">${ch.nombre}</div>
+          ${sub.length?'<div style="font-size:10px;color:var(--gris3);margin-top:2px">'+sub.map(s=>'↳ '+s.nombre).join(' · ')+'</div>':''}
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+// ── INIT ──
+buildTramites();
+buildDotacion();
+buildBenchmarks();
+updateSim();
+renderSGA();
+</script>
+</body>
+</html>
