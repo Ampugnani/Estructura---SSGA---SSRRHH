@@ -605,13 +605,14 @@ input[type=range]{width:100%;accent-color:var(--teal);cursor:pointer;height:4px}
           <div class="met" style="border-color:var(--teal)"><div class="met-num t" style="font-size:22px" id="comp-pro-ds">—</div><div class="met-lbl">Dir. Simples</div></div>
           <div class="met" style="border-color:var(--teal)"><div class="met-num t" style="font-size:22px" id="comp-pro-co">—</div><div class="met-lbl">Coordinaciones</div></div>
           <div class="met" style="border-color:var(--teal)"><div class="met-num t" style="font-size:22px">0</div><div class="met-lbl">Departamentos</div></div>
+          <div class="met" style="border-color:var(--teal)"><div class="met-num t" style="font-size:22px" id="comp-pro-tot2">—</div><div class="met-lbl">Total unidades<br>(sin Subsec.)</div></div>
         </div>
         <div style="text-align:center;padding:8px;background:var(--teal);border-radius:6px;color:white">
           <div style="font-size:30px;font-weight:900;line-height:1" id="comp-pro-tot">—</div>
-          <div style="font-size:11px;opacity:.8;margin-top:2px">Unidades organizativas totales (propuesta)</div>
+          <div style="font-size:11px;opacity:.8;margin-top:2px">Unidades organizativas totales (propuesta, sin Subsec.)</div>
         </div>
         <div style="text-align:center;padding:6px;margin-top:6px;background:rgba(29,158,117,.1);border-radius:6px;color:var(--teal);font-size:11px;font-weight:600">
-          Reducción: −74% unidades · Eliminación total de departamentos y dependencias duplicadas
+          Reducción de unidades organizativas · Eliminación total de departamentos · Estructura conforme Anexo I y III
         </div>
       </div>
     </div>
@@ -741,13 +742,17 @@ const ACTUAL_DIRECT = [
 
 // ── Propuesta ──────────────────────────────────────────────────
 const PROPUESTA_SGA = [
-  { dg:'DG de Recursos Humanos', ds:['Dir. Administ. y Desarrollo de RRHH','Dir. Liquidación de Haberes'],
-    coords:['Coord. Contratación de Personal','Coord. Desarrollo de Carrera'] },
-  { dg:'DG Tecnologías de la Inf. y Comun.', ds:[],
-    coords:['Coord. Infraestructura, Seg. y Soporte','Coord. Desarrollo de Sistemas'] },
-  { dg:'DG de Administración', ds:['Dir. Compras, Patrimonio y Suministros','Dir. Presupuesto, Contabilidad y Finanzas'],
-    coords:['Coord. Servicios Generales','Coord. Programación Presupuestaria','Coord. Tesorería','Coord. Gestión, Planeamiento y Monitoreo de Organismos Descentralizados'] },
-  { dg:'DG Programas y Proyectos Sectoriales', ds:[], coords:[] },
+  { dg:'DG de Recursos Humanos',
+    ds:['Dir. de Administración y Desarrollo de RRHH','Dir. de Liquidación de Haberes'],
+    coords:['Coord. de Medicina y Seguridad en el Trabajo','Coord. de Contratación de Personal','Coord. de Desarrollo de Carrera'] },
+  { dg:'DG de Tecnologías de la Información y de las Comunicaciones',
+    ds:[],
+    coords:['Coord. de Infraestructura y Soporte Informático','Coord. de Desarrollo de Sistemas','Coord. de Seguridad Informática'] },
+  { dg:'DG de Administración',
+    ds:['Dir. de Presupuesto, Contabilidad y Finanzas','Dir. de Compras, Patrimonio y Suministros','Dir. de Servicios Técnicos y Operativos'],
+    coords:['Coord. de Servicios Generales','Coord. de Gestión, Planeamiento y Monitoreo de Organismos Descentralizados','Coord. de Programación Presupuestaria','Coord. de Tesorería','Coord. de Contrataciones','Coord. de Gestión Operativa','Coord. de Infraestructura Edilicia'] },
+  { dg:'DG de Programas y Proyectos Sectoriales y Especiales',
+    ds:[], coords:[] },
 ];
 
 function buildComparativo(){
@@ -774,6 +779,8 @@ function buildComparativo(){
   if(_pDS) _pDS.textContent = pro_ds;
   if(_pCO) _pCO.textContent = pro_co;
   if(_pTT) _pTT.textContent = pro_tot;
+  const _pTT2 = document.getElementById('comp-pro-tot2');
+  if(_pTT2) _pTT2.textContent = pro_tot;
 
   const rows = [
     ['Direcciones Generales (A I)',  act_dg,  pro_dg,  pro_dg-act_dg],
@@ -1905,27 +1912,44 @@ const SGA_COLORS = {
 };
 
 const SGA_DEFAULT = [
-  { id:'ssga', parentId:null,   tipo:'ssec',  nombre:'Subsecretaría de Gestión Administrativa', titular:'', locked:true },
-  { id:'dgrrhh', parentId:'ssga', tipo:'dg', nombre:'DG de Recursos Humanos', titular:'', locked:true },
-  { id:'dgtic',  parentId:'ssga', tipo:'dg', nombre:'DG de Tecnologías de la Información y las Comunicaciones', titular:'', locked:true },
-  { id:'dgadm',  parentId:'ssga', tipo:'dg', nombre:'DG de Administración', titular:'', locked:true },
-  { id:'dgpps',  parentId:'ssga', tipo:'dg', nombre:'DG de Programas y Proyectos Sectoriales y Especiales', titular:'', locked:false },
-  // Bajo DG RRHH
-  { id:'dadprrhh', parentId:'dgrrhh', tipo:'ds', nombre:'Dir. de Administración y Desarrollo de RRHH', titular:'', locked:false },
-  { id:'dliqhab',  parentId:'dgrrhh', tipo:'ds', nombre:'Dir. de Liquidación de Haberes', titular:'', locked:false },
-  { id:'cmedseg',  parentId:'dgrrhh', tipo:'coord', nombre:'Coord. de Medicina y Seguridad Laboral', titular:'', locked:false },
+  { id:'ssga',     parentId:null,     tipo:'ssec',  nombre:'Subsecretaría de Gestión Administrativa de Producción', titular:'', locked:true },
+
+  // ── DG Recursos Humanos ───────────────────────────────────────────────
+  { id:'dgrrhh',   parentId:'ssga',   tipo:'dg',    nombre:'DG de Recursos Humanos', titular:'', locked:true },
+  // Dependencia directa DG RRHH
+  { id:'cmedseg',  parentId:'dgrrhh', tipo:'coord', nombre:'Coord. de Medicina y Seguridad en el Trabajo', titular:'', locked:false },
+  // Dir. de Administración y Desarrollo de RRHH
+  { id:'dadprrhh', parentId:'dgrrhh', tipo:'ds',    nombre:'Dir. de Administración y Desarrollo de RRHH', titular:'', locked:false },
   { id:'ccontrat', parentId:'dadprrhh', tipo:'coord', nombre:'Coord. de Contratación de Personal', titular:'', locked:false },
   { id:'ccarrera', parentId:'dadprrhh', tipo:'coord', nombre:'Coord. de Desarrollo de Carrera', titular:'', locked:false },
-  // Bajo DG TIC
-  { id:'cinfra',   parentId:'dgtic', tipo:'coord', nombre:'Coord. de Infraestructura, Seguridad y Soporte Informático', titular:'', locked:false },
-  { id:'cdesarr',  parentId:'dgtic', tipo:'coord', nombre:'Coord. de Desarrollo de Sistemas', titular:'', locked:false },
-  // Bajo DG Administración
-  { id:'dcps',  parentId:'dgadm', tipo:'ds', nombre:'Dir. de Compras, Patrimonio y Suministros', titular:'', locked:false },
-  { id:'dppcf', parentId:'dgadm', tipo:'ds', nombre:'Dir. de Presupuesto, Contabilidad y Finanzas', titular:'', locked:false },
-  { id:'cservgen',  parentId:'dgadm', tipo:'coord', nombre:'Coord. de Servicios Generales', titular:'', locked:false },
-  { id:'cgpmod',    parentId:'dgadm', tipo:'coord', nombre:'Coord. de Gestión, Planeamiento y Monitoreo de Organismos Descentralizados', titular:'', locked:false },
-  { id:'cprogpres', parentId:'dppcf', tipo:'coord', nombre:'Coord. de Programación Presupuestaria', titular:'', locked:false },
+  // Dir. de Liquidación de Haberes
+  { id:'dliqhab',  parentId:'dgrrhh', tipo:'ds',    nombre:'Dir. de Liquidación de Haberes', titular:'', locked:false },
+
+  // ── DG Tecnologías de la Información y de las Comunicaciones ──────────
+  { id:'dgtic',    parentId:'ssga',   tipo:'dg',    nombre:'DG de Tecnologías de la Información y de las Comunicaciones', titular:'', locked:true },
+  { id:'cinfrasoporte', parentId:'dgtic', tipo:'coord', nombre:'Coord. de Infraestructura y Soporte Informático', titular:'', locked:false },
+  { id:'cdesarr',  parentId:'dgtic',  tipo:'coord', nombre:'Coord. de Desarrollo de Sistemas', titular:'', locked:false },
+  { id:'cseginfo', parentId:'dgtic',  tipo:'coord', nombre:'Coord. de Seguridad Informática', titular:'', locked:false },
+
+  // ── DG Administración ─────────────────────────────────────────────────
+  { id:'dgadm',    parentId:'ssga',   tipo:'dg',    nombre:'DG de Administración', titular:'', locked:true },
+  // Dependencias directas DGA
+  { id:'cservgen', parentId:'dgadm',  tipo:'coord', nombre:'Coord. de Servicios Generales', titular:'', locked:false },
+  { id:'cgpmod',   parentId:'dgadm',  tipo:'coord', nombre:'Coord. de Gestión, Planeamiento y Monitoreo de Organismos Descentralizados', titular:'', locked:false },
+  // Dir. de Presupuesto, Contabilidad y Finanzas
+  { id:'dppcf',    parentId:'dgadm',  tipo:'ds',    nombre:'Dir. de Presupuesto, Contabilidad y Finanzas', titular:'', locked:false },
+  { id:'cprogpres',parentId:'dppcf',  tipo:'coord', nombre:'Coord. de Programación Presupuestaria', titular:'', locked:false },
   { id:'ctesoreria',parentId:'dppcf', tipo:'coord', nombre:'Coord. de Tesorería', titular:'', locked:false },
+  // Dir. de Compras, Patrimonio y Suministros
+  { id:'dcps',     parentId:'dgadm',  tipo:'ds',    nombre:'Dir. de Compras, Patrimonio y Suministros', titular:'', locked:false },
+  // Dir. de Servicios Técnicos y Operativos (nueva, bajo Dir. de Compras)
+  { id:'dsto',     parentId:'dcps',   tipo:'ds',    nombre:'Dir. de Servicios Técnicos y Operativos', titular:'', locked:false },
+  { id:'ccontr',   parentId:'dsto',   tipo:'coord', nombre:'Coord. de Contrataciones', titular:'', locked:false },
+  { id:'cgestop',  parentId:'dsto',   tipo:'coord', nombre:'Coord. de Gestión Operativa', titular:'', locked:false },
+  { id:'cinfraed', parentId:'dsto',   tipo:'coord', nombre:'Coord. de Infraestructura Edilicia', titular:'', locked:false },
+
+  // ── DG Programas y Proyectos Sectoriales y Especiales ────────────────
+  { id:'dgpps',    parentId:'ssga',   tipo:'dg',    nombre:'DG de Programas y Proyectos Sectoriales y Especiales', titular:'', locked:false },
 ];
 
 let sgaData = JSON.parse(JSON.stringify(SGA_DEFAULT));
